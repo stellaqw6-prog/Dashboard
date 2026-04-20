@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel — UnoTech Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060608;
+  --bg2: #0c0c10;
+  --bg3: #111116;
+  --bg4: #16161d;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --cyan: #00e5ff;
+  --cyan-dim: rgba(0,229,255,0.15);
+  --cyan-glow: rgba(0,229,255,0.3);
+  --green: #00ff88;
+  --green-dim: rgba(0,255,136,0.12);
+  --red: #ff3d5a;
+  --red-dim: rgba(255,61,90,0.12);
+  --orange: #ff9500;
+  --orange-dim: rgba(255,149,0,0.12);
+  --text: #e8eaf0;
+  --muted: #5a5d6b;
+  --muted2: #8a8d9b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* SCANLINE OVERLAY */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===================== LOGIN SCREEN ===================== */
+#login-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  z-index: 10000;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(0,229,255,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(0,255,136,0.06) 0%, transparent 50%);
+}
+/* Grid lines background */
+#login-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.login-box {
+  width: 92%;
+  max-width: 400px;
+  background: var(--bg2);
+  border: 1px solid rgba(0,229,255,0.2);
+  border-radius: 24px;
+  padding: 44px 32px 36px;
+  position: relative;
+  overflow: visible;
+  box-shadow: 0 0 60px rgba(0,229,255,0.07), 0 24px 60px rgba(0,0,0,0.6);
+}
+.login-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  border-radius: 0 0 4px 4px;
+}
+.login-box::after {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,255,0.07), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+.login-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.login-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(0,229,255,0.05));
+  border: 1px solid rgba(0,229,255,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(0,229,255,0.12);
+}
+.login-header-text {}
+.login-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: #fff;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+.login-sub {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--cyan);
+  letter-spacing: 1.5px;
+  margin-top: 4px;
+  opacity: 0.8;
+}
+.l-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted2);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 10px;
+}
+.l-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 15px 18px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 20px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  margin-bottom: 24px;
+  letter-spacing: 8px;
+}
+.l-input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.1);
+}
+.btn-login {
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--cyan);
+  color: #000;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 2px;
+  border: none;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-login::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.5s;
+}
+.btn-login:hover::before { transform: translateX(100%); }
+.btn-login:hover { box-shadow: 0 0 24px rgba(0,229,255,0.4); transform: translateY(-1px); }
+.btn-login:active { transform: translateY(0); }
+.login-err {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: var(--red-dim);
+  border: 1px solid var(--red);
+  border-radius: 10px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--red);
+  display: none;
+  letter-spacing: 0.5px;
+}
+.login-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+/* Corner accent */
+.login-corner {
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 100px; height: 100px;
+  border-left: 1px solid rgba(0,229,255,0.06);
+  border-top: 1px solid rgba(0,229,255,0.06);
+  border-radius: 50% 0 0 0;
+  pointer-events: none;
+}
+
+/* ===================== MAIN APP ===================== */
+#app { display: none; }
+
+/* TOPBAR */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(6,6,8,0.97);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 13px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.topbar::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.3), transparent);
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(0,229,255,0.05));
+  border: 1px solid rgba(0,229,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  box-shadow: 0 0 12px rgba(0,229,255,0.1);
+}
+.topbar-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+.topbar-sub {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  color: var(--cyan);
+  letter-spacing: 1.5px;
+  opacity: 0.8;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.btn-logout {
+  padding: 7px 16px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-logout:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+
+/* TABS NAV */
+.tabs-nav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 12px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.tabs-nav::-webkit-scrollbar { display: none; }
+.tnav {
+  padding: 8px 16px;
+  border-radius: 8px;
+  white-space: nowrap;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted2);
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tnav.active {
+  background: var(--cyan-dim);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.tnav:hover:not(.active) {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+/* PANELS */
+.panel { display: none; padding: 20px 16px 100px; }
+.panel.active { display: block; }
+
+/* SECTION */
+.section {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.section-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--cyan);
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan);
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.section-body { padding: 18px; }
+
+/* FORM ELEMENTS */
+.fg { margin-bottom: 16px; }
+.fl {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--muted2);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 7px;
+}
+.fi, .fta, .fsel {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s;
+}
+.fi:focus, .fta:focus, .fsel:focus { border-color: var(--cyan); }
+.fi::placeholder, .fta::placeholder { color: var(--muted); }
+.fta { resize: vertical; min-height: 80px; line-height: 1.6; }
+.fsel { appearance: none; cursor: pointer; }
+.fhint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+/* GRID 2 */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* SAVE BTN */
+.btn-save {
+  padding: 12px 24px;
+  border-radius: 9px;
+  background: var(--cyan);
+  color: #000;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-save:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn-save:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-danger {
+  padding: 12px 24px;
+  border-radius: 9px;
+  background: var(--red-dim);
+  color: var(--red);
+  border: 1px solid var(--red);
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-danger:hover { background: var(--red); color: #fff; }
+.btn-secondary {
+  padding: 12px 20px;
+  border-radius: 9px;
+  background: var(--bg3);
+  color: var(--muted2);
+  border: 1px solid var(--border2);
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* PRODUCT CARD */
+.prod-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  position: relative;
+}
+.prod-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.prod-item-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+}
+.prod-item-id {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all .2s;
+}
+.btn-icon:hover { border-color: var(--red); color: var(--red); }
+.btn-icon.edit:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* VARIAN ROW */
+.varian-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.varian-row .fi { margin: 0; }
+.varian-name { flex: 2; }
+.varian-price { flex: 2; }
+.btn-rm-var {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--red-dim);
+  border: 1px solid var(--red);
+  color: var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all .2s;
+}
+.btn-rm-var:hover { background: var(--red); color: #fff; }
+.btn-add-var {
+  padding: 8px 14px;
+  border-radius: 7px;
+  background: var(--green-dim);
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all .2s;
+  margin-top: 4px;
+}
+.btn-add-var:hover { background: var(--green); color: #000; }
+
+/* FEATURE ROW */
+.feature-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.feature-row .fi { margin: 0; }
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  z-index: 9000;
+  transition: transform .3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--red); color: var(--red); }
+.toast.loading { border-color: var(--cyan); color: var(--cyan); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0,0,0,0.88);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: flex-end;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  width: 100%;
+  max-height: 92vh;
+  background: var(--bg2);
+  border-radius: 20px 20px 0 0;
+  border-top: 2px solid var(--cyan);
+  overflow-y: auto;
+  animation: slideUp .3s ease;
+  padding: 20px 18px 40px;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.modal-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border2); margin: 0 auto 20px; }
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+/* STORAGE STATS */
+.storage-bar-wrap {
+  background: var(--bg3);
+  border-radius: 6px;
+  height: 8px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+.storage-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  transition: width .5s ease;
+}
+.storage-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+.stat-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.stat-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: var(--cyan);
+  font-weight: 700;
+}
+.stat-label {
+  font-size: 10px;
+  color: var(--muted2);
+  margin-top: 3px;
+  font-family: 'Space Mono', monospace;
+}
+
+/* KEY DISPLAY */
+.key-box {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--cyan);
+  word-break: break-all;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+}
+
+/* MARQUEE ITEMS */
+.marquee-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.marquee-item .fi { margin: 0; }
+
+/* ACTION ROW */
+.action-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+/* INFO BANNER */
+.info-banner {
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--cyan);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.warn-banner {
+  background: var(--orange-dim);
+  border: 1px solid var(--orange);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--orange);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+/* TOGGLE */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { font-size: 13px; color: var(--text); }
+.toggle-desc { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+.toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  position: relative;
+  cursor: pointer;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.toggle.on { background: var(--cyan); border-color: var(--cyan); }
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--muted2);
+  top: 2px; left: 2px;
+  transition: transform .2s, background .2s;
+}
+.toggle.on::after { transform: translateX(20px); background: #000; }
+
+/* LOADING SPINNER */
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(0,229,255,0.2);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* BG TYPE BUTTONS */
+.bg-type-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px 8px;
+  cursor: pointer;
+  text-align: center;
+  color: var(--muted2);
+  font-size: 12px;
+  transition: all .2s;
+}
+.bg-type-btn.active {
+  background: var(--cyan-dim);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.bg-type-btn:hover:not(.active) {
+  border-color: var(--border2);
+  background: var(--bg4);
+  color: var(--text);
+}
+.grad-preset {
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: rgba(255,255,255,.7);
+  transition: all .2s;
+  letter-spacing: .5px;
+}
+.grad-preset:hover, .grad-preset.selected { border-color: var(--cyan); transform: scale(1.03); }
+.bg-color-pair { flex: 1; }
+
+/* HERO SLIDE ITEM */
+.slide-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  position: relative;
+}
+.slide-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.slide-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--cyan);
+  letter-spacing: 1px;
+}
+.slide-preview {
+  width: 100%;
+  height: 70px;
+  border-radius: 8px;
+  background: var(--bg4);
+  margin-bottom: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.slide-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  padding: 8px;
+  text-align: center;
+  line-height: 1.4;
+}
+/* PRODUK IMG ROW */
+.prodimg-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.prodimg-row:last-child { border-bottom: none; margin-bottom: 0; }
+.prodimg-thumb {
+  width: 72px;
+  height: 52px;
+  border-radius: 8px;
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--muted);
+  overflow: hidden;
+}
+.prodimg-info { flex: 1; }
+.prodimg-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; color: #fff; margin-bottom: 6px; }
+.prodimg-id { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.confirm-overlay.open { display: flex; }
+.confirm-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-top: 2px solid var(--red);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 340px;
+  width: 100%;
+}
+.confirm-icon { font-size: 36px; margin-bottom: 14px; }
+.confirm-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.confirm-msg {
+  font-size: 13px;
+  color: var(--muted2);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+.confirm-btns { display: flex; gap: 10px; }
+.confirm-btns button { flex: 1; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-corner"></div>
+    <div class="login-header">
+      <div class="login-icon">🛡️</div>
+      <div class="login-header-text">
+        <div class="login-title">Admin Panel</div>
+        <div class="login-sub">UNOTECH STORE · RESTRICTED</div>
+      </div>
+    </div>
+    <label class="l-label">Password</label>
+    <input class="l-input" type="password" id="pw-input" placeholder="••••••" autocomplete="current-password" inputmode="numeric" onkeydown="if(event.key==='Enter')doLogin()" onclick="this.focus()" onfocus="this.select()">
+    <button class="btn-login" onclick="doLogin()">MASUK →</button>
+    <div class="login-err" id="login-err">❌ Password salah! Coba lagi.</div>
+    <div class="login-footer">SECURE ACCESS · v2.0</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-icon">⚙️</div>
+      <div>
+        <div class="topbar-title">Admin Panel</div>
+        <div class="topbar-sub">UnoTech Store</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-dot"></div>
+      <button class="btn-logout" onclick="doLogout()">KELUAR</button>
+    </div>
+  </div>
+
+  <div class="tabs-nav">
+    <button class="tnav active" onclick="switchTab('store',this)">🏪 Store</button>
+    <button class="tnav" onclick="switchTab('produk',this)">📦 Produk</button>
+    <button class="tnav" onclick="switchTab('marquee',this)">📢 Marquee</button>
+    <button class="tnav" onclick="switchTab('tampilan',this)">🎨 Tampilan</button>
+    <button class="tnav" onclick="switchTab('storage',this)">💾 Storage</button>
+  </div>
+
+  <!-- ===== TAB: STORE ===== -->
+  <div class="panel active" id="tab-store">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🏪 Info Store</div>
+        <div class="section-badge">Identitas</div>
+      </div>
+      <div class="section-body">
+        <div class="fg">
+          <label class="fl">Nama Store</label>
+          <input class="fi" id="s-nama" placeholder="UnoTech Store">
+        </div>
+        <div class="fg">
+          <label class="fl">Tagline / Slogan</label>
+          <input class="fi" id="s-tagline" placeholder="Panel Pterodactyl VPS Legal">
+        </div>
+        <div class="fg">
+          <label class="fl">Deskripsi Hero</label>
+          <textarea class="fta" id="s-desc" placeholder="Deskripsi singkat store kamu..."></textarea>
+        </div>
+        <div class="action-row">
+          <button class="btn-save" onclick="saveStore()"><span class="btn-spinner" id="sp-store"></span>💾 Simpan</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">📞 Kontak & CS</div>
+        <div class="section-badge">Komunikasi</div>
+      </div>
+      <div class="section-body">
+        <div class="fg">
+          <label class="fl">Nomor Admin / CS (WA)</label>
+          <input class="fi" id="s-admin-wa" placeholder="628xxxxxxxxxx" type="tel">
+          <div class="fhint">Format internasional tanpa + (contoh: 6281234567890)</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Link Grup Buyer</label>
+          <input class="fi" id="s-grup-buyer" placeholder="https://chat.whatsapp.com/...">
+        </div>
+        <div class="fg">
+          <label class="fl">Nomor CS 2 (opsional)</label>
+          <input class="fi" id="s-cs2" placeholder="628xxxxxxxxxx" type="tel">
+        </div>
+        <div class="action-row">
+          <button class="btn-save" onclick="saveKontak()">💾 Simpan Kontak</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🔗 Drawer Menu</div>
+        <div class="section-badge">Navigasi</div>
+      </div>
+      <div class="section-body">
+        <div class="info-banner">Menu yang tampil di sidebar/drawer.<br>
+Kode khusus: <b>#top</b> → scroll atas · <b>#chat</b> → live chat · <b>#renew</b> → perpanjang panel · <b>#track</b> → cek order · <b>#ulasan</b> → halaman ulasan<br>
+URL lain: <b>https://...</b> → buka link baru · <b>wa:Teks</b> → kirim WA ke admin</div>
+        <div id="drawer-items"></div>
+        <div class="action-row" style="margin-top:10px">
+          <button class="btn-add-var" onclick="addDrawerItem()">+ Tambah Menu</button>
+          <button class="btn-save" onclick="saveDrawer()">💾 Simpan Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: PRODUK ===== -->
+  <div class="panel" id="tab-produk">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">📦 Daftar Produk</div>
+        <div class="section-badge" id="prod-count-badge">0 produk</div>
+      </div>
+      <div class="section-body">
+        <div id="prod-list"></div>
+        <div class="action-row">
+          <button class="btn-secondary" onclick="openAddProd()">➕ Tambah Produk</button>
+          <button class="btn-save" onclick="saveProducts()">💾 Simpan Semua</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: MARQUEE ===== -->
+  <div class="panel" id="tab-marquee">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">📢 Teks Marquee</div>
+        <div class="section-badge">Running Text</div>
+      </div>
+      <div class="section-body">
+        <div class="info-banner">Teks yang berjalan di bagian atas store. Pisahkan setiap item dengan baris baru.</div>
+        <div id="marquee-items"></div>
+        <div class="action-row" style="margin-top:10px">
+          <button class="btn-add-var" onclick="addMarqueeItem()">+ Tambah Teks</button>
+          <button class="btn-save" onclick="saveMarquee()">💾 Simpan Marquee</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: TAMPILAN ===== -->
+  <div class="panel" id="tab-tampilan">
+
+    <!-- GAMBAR MENU PRODUK -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🖼️ Gambar Menu Produk</div>
+        <div class="section-badge">Custom</div>
+      </div>
+      <div class="section-body">
+        <div class="info-banner">Upload URL gambar untuk setiap kartu produk. Gambar akan tampil sebagai background di kartu produk. Gunakan URL CDN seperti ImgBB, Cloudinary, dll.</div>
+        <div id="produk-img-list">
+          <div style="text-align:center;padding:16px;color:var(--muted2);font-size:12px"><div class="spinner"></div><div style="margin-top:8px">Memuat produk...</div></div>
+        </div>
+        <div class="action-row" style="margin-top:4px">
+          <button class="btn-save" onclick="saveProdukImg()">💾 Simpan Gambar Produk</button>
+          <button class="btn-secondary" onclick="resetProdukImg()">↩️ Reset Semua</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO SLIDER -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🎠 Hero Slider</div>
+        <div class="section-badge">Baru</div>
+      </div>
+      <div class="section-body">
+        <div class="info-banner">Kustomisasi slide di bagian atas store. Jika dikosongkan, slider akan otomatis mengambil dari data produk. Setiap slide bisa punya gambar sendiri.</div>
+        <div id="hero-slide-list"></div>
+        <div class="action-row" style="margin-top:10px">
+          <button class="btn-add-var" onclick="addHeroSlide()">+ Tambah Slide</button>
+          <button class="btn-save" onclick="saveHeroSlides()">💾 Simpan Slider</button>
+          <button class="btn-secondary" onclick="resetHeroSlides()">↩️ Reset Auto</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BACKGROUND SECTION -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🖼️ Background Store</div>
+        <div class="section-badge">Baru</div>
+      </div>
+      <div class="section-body">
+        <div class="info-banner">Pilih tipe background untuk halaman store. Preview akan tampil di bawah.</div>
+
+        <!-- Type selector -->
+        <div class="fg">
+          <label class="fl">Tipe Background</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+            <div class="bg-type-btn active" id="bgt-default" onclick="selectBgType('default')">
+              <div style="font-size:18px">🌑</div>
+              <div style="font-family:'Space Mono',monospace;font-size:10px;margin-top:4px">Default Dark</div>
+            </div>
+            <div class="bg-type-btn" id="bgt-gradient" onclick="selectBgType('gradient')">
+              <div style="font-size:18px">🌈</div>
+              <div style="font-family:'Space Mono',monospace;font-size:10px;margin-top:4px">Gradient</div>
+            </div>
+            <div class="bg-type-btn" id="bgt-image" onclick="selectBgType('image')">
+              <div style="font-size:18px">🖼️</div>
+              <div style="font-family:'Space Mono',monospace;font-size:10px;margin-top:4px">Gambar URL</div>
+            </div>
+            <div class="bg-type-btn" id="bgt-mesh" onclick="selectBgType('mesh')">
+              <div style="font-size:18px">✨</div>
+              <div style="font-family:'Space Mono',monospace;font-size:10px;margin-top:4px">Mesh Aurora</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gradient options -->
+        <div id="bg-gradient-opts" style="display:none">
+          <div class="fg">
+            <label class="fl">Preset Gradient</label>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+              <div class="grad-preset" data-grad="linear-gradient(135deg,#0a0a10 0%,#1a0a2e 50%,#0a0a10 100%)" onclick="selectGradPreset(this)" style="background:linear-gradient(135deg,#0a0a10,#1a0a2e,#0a0a10)">Purple</div>
+              <div class="grad-preset" onclick="selectGradPreset(this)" data-grad="linear-gradient(135deg,#050d2e 0%,#0a1a5c 50%,#050d2e 100%)" style="background:linear-gradient(135deg,#050d2e,#0a1a5c,#050d2e)">Blue</div>
+              <div class="grad-preset" onclick="selectGradPreset(this)" data-grad="linear-gradient(135deg,#041a10 0%,#073d1a 50%,#041a10 100%)" style="background:linear-gradient(135deg,#041a10,#073d1a,#041a10)">Green</div>
+              <div class="grad-preset" onclick="selectGradPreset(this)" data-grad="linear-gradient(135deg,#1a0505 0%,#3d0a0a 50%,#1a0505 100%)" style="background:linear-gradient(135deg,#1a0505,#3d0a0a,#1a0505)">Red</div>
+              <div class="grad-preset" onclick="selectGradPreset(this)" data-grad="linear-gradient(135deg,#0a0a0a 0%,#1a1a2e 30%,#16213e 60%,#0f3460 100%)" style="background:linear-gradient(135deg,#0a0a0a,#1a1a2e,#16213e,#0f3460)">Ocean</div>
+              <div class="grad-preset" onclick="selectGradPreset(this)" data-grad="linear-gradient(135deg,#0d0208 0%,#1a0533 40%,#0a0d2e 100%)" style="background:linear-gradient(135deg,#0d0208,#1a0533,#0a0d2e)">Galaxy</div>
+            </div>
+            <label class="fl" style="margin-top:8px">Atau Custom CSS Gradient</label>
+            <input class="fi" id="bg-grad-custom" placeholder="linear-gradient(135deg,#000,#1a0a2e)">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="bg-color-pair">
+              <label class="fl">Warna 1</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="color" id="bg-c1" value="#0a0a10" style="width:44px;height:36px;border-radius:7px;border:none;cursor:pointer">
+                <input class="fi" id="bg-c1-hex" value="#0a0a10" style="flex:1">
+              </div>
+            </div>
+            <div class="bg-color-pair" style="flex:1">
+              <label class="fl">Warna 2</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="color" id="bg-c2" value="#1a0a2e" style="width:44px;height:36px;border-radius:7px;border:none;cursor:pointer">
+                <input class="fi" id="bg-c2-hex" value="#1a0a2e" style="flex:1">
+              </div>
+            </div>
+          </div>
+          <button class="btn-secondary" style="margin-top:10px;width:100%" onclick="buildCustomGrad()">🔄 Buat dari Warna</button>
+        </div>
+
+        <!-- Image URL option -->
+        <div id="bg-image-opts" style="display:none">
+          <div class="fg">
+            <label class="fl">URL Gambar Background</label>
+            <input class="fi" id="bg-img-url" placeholder="https://example.com/bg.jpg">
+            <div class="fhint">Gunakan gambar beresolusi tinggi. Disarankan format landscape (1920×1080).</div>
+          </div>
+          <div class="fg">
+            <label class="fl">Opacity Overlay Gelap</label>
+            <input type="range" id="bg-img-opacity" min="0" max="90" value="60" style="width:100%;accent-color:var(--cyan)" oninput="document.getElementById('bg-opacity-val').textContent=this.value+'%'">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted2);margin-top:4px"><span>0% (terang)</span><span id="bg-opacity-val">60%</span><span>90% (gelap)</span></div>
+          </div>
+        </div>
+
+        <!-- Mesh option -->
+        <div id="bg-mesh-opts" style="display:none">
+          <div class="info-banner">✨ Aurora Mesh: background animasi gradient berwarna-warni yang dinamis. Tidak perlu konfigurasi tambahan!</div>
+          <div class="fg">
+            <label class="fl">Pilih Tema Aurora</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="bg-type-btn active" id="mesh-purple" onclick="selectMeshTheme('purple',this)">
+                <div style="width:100%;height:30px;border-radius:6px;background:linear-gradient(135deg,rgba(124,58,237,.8),rgba(217,70,239,.8),rgba(59,130,246,.6));margin-bottom:4px"></div>
+                <div style="font-family:'Space Mono',monospace;font-size:9px">Purple Aurora</div>
+              </div>
+              <div class="bg-type-btn" id="mesh-cyan" onclick="selectMeshTheme('cyan',this)">
+                <div style="width:100%;height:30px;border-radius:6px;background:linear-gradient(135deg,rgba(0,229,255,.7),rgba(0,255,136,.6),rgba(59,130,246,.5));margin-bottom:4px"></div>
+                <div style="font-family:'Space Mono',monospace;font-size:9px">Cyan Aurora</div>
+              </div>
+              <div class="bg-type-btn" id="mesh-fire" onclick="selectMeshTheme('fire',this)">
+                <div style="width:100%;height:30px;border-radius:6px;background:linear-gradient(135deg,rgba(239,68,68,.8),rgba(245,158,11,.6),rgba(217,70,239,.4));margin-bottom:4px"></div>
+                <div style="font-family:'Space Mono',monospace;font-size:9px">Fire Aurora</div>
+              </div>
+              <div class="bg-type-btn" id="mesh-ocean" onclick="selectMeshTheme('ocean',this)">
+                <div style="width:100%;height:30px;border-radius:6px;background:linear-gradient(135deg,rgba(6,182,212,.8),rgba(99,102,241,.7),rgba(16,185,129,.5));margin-bottom:4px"></div>
+                <div style="font-family:'Space Mono',monospace;font-size:9px">Ocean Aurora</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="fg" style="margin-top:8px">
+          <label class="fl">Preview Background</label>
+          <div id="bg-preview" style="width:100%;height:90px;border-radius:12px;border:1px solid var(--border2);background:#0a0a10;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.3);transition:background .4s;overflow:hidden;position:relative">
+            <span id="bg-preview-label">Default Dark</span>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button class="btn-save" onclick="saveBg()">💾 Simpan Background</button>
+          <button class="btn-secondary" onclick="resetBg()">↩️ Reset Default</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🎨 Tema Warna</div>
+        <div class="section-badge">Visual</div>
+      </div>
+      <div class="section-body">
+        <div class="fg">
+          <label class="fl">Warna Aksen Utama</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="color" id="t-accent" value="#7c3aed" style="width:50px;height:40px;border-radius:8px;border:none;cursor:pointer;background:transparent">
+            <input class="fi" id="t-accent-hex" placeholder="#7c3aed" style="flex:1">
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Warna Aksen Kedua</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="color" id="t-accent2" value="#d946ef" style="width:50px;height:40px;border-radius:8px;border:none;cursor:pointer;background:transparent">
+            <input class="fi" id="t-accent2-hex" placeholder="#d946ef" style="flex:1">
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Inisial Avatar (1 huruf)</label>
+          <input class="fi" id="t-avatar" placeholder="U" maxlength="1">
+        </div>
+        <div class="action-row">
+          <button class="btn-save" onclick="saveTampilan()">💾 Simpan Tampilan</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">⚙️ Fitur Store</div>
+        <div class="section-badge">Pengaturan</div>
+      </div>
+      <div class="section-body">
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Mode Maintenance</div>
+            <div class="toggle-desc">Sembunyikan store dari publik</div>
+          </div>
+          <div class="toggle" id="tg-maintenance" onclick="toggleFitur('maintenance')"></div>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Tampilkan Badge BARU</div>
+            <div class="toggle-desc">Badge hijau di pojok produk</div>
+          </div>
+          <div class="toggle on" id="tg-badge-baru" onclick="toggleFitur('badge-baru')"></div>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Tampilkan Rating Bintang</div>
+            <div class="toggle-desc">Rating ★★★★★ di produk</div>
+          </div>
+          <div class="toggle on" id="tg-rating" onclick="toggleFitur('rating')"></div>
+        </div>
+        <div style="margin-top:14px">
+          <button class="btn-save" onclick="saveFitur()">💾 Simpan Pengaturan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: STORAGE ===== -->
+  <div class="panel" id="tab-storage">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">💾 DongtubeDB Storage</div>
+        <div class="section-badge">Status</div>
+      </div>
+      <div class="section-body">
+        <div id="storage-info">
+          <div style="color:var(--muted2);font-size:12px;text-align:center;padding:20px">
+            <div class="spinner"></div>
+            <div style="margin-top:10px">Mengambil info storage...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🔑 API Key</div>
+        <div class="section-badge">Aktif</div>
+      </div>
+      <div class="section-body">
+        <div class="key-box" id="api-key-display">••••••••••••••••••••••••••••••••</div>
+        <div class="action-row" style="margin-top:12px">
+          <button class="btn-secondary" onclick="toggleShowKey()">👁️ Tampilkan Key</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🗑️ Manajemen Data</div>
+        <div class="section-badge">Berbahaya</div>
+      </div>
+      <div class="section-body">
+        <div class="warn-banner">⚠️ Aksi di bawah tidak bisa dibatalkan! Pastikan kamu sudah backup data sebelum menghapus.</div>
+        <div class="action-row">
+          <button class="btn-danger" onclick="confirmReset('store')">🗑️ Reset Config Store</button>
+          <button class="btn-danger" onclick="confirmReset('produk')">🗑️ Reset Produk</button>
+        </div>
+        <div class="action-row" style="margin-top:10px">
+          <button class="btn-danger" onclick="confirmReset('all')">⚠️ HAPUS SEMUA DATA</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">📋 Semua Key Tersimpan</div>
+        <div class="section-badge">Raw</div>
+      </div>
+      <div class="section-body">
+        <div id="all-keys" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted2);line-height:1.8">
+          Klik refresh untuk muat...
+        </div>
+        <div class="action-row" style="margin-top:12px">
+          <button class="btn-secondary" onclick="loadAllKeys()">🔄 Refresh Keys</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TAMBAH/EDIT PRODUK -->
+<div class="modal-overlay" id="prod-modal" onclick="closeProdModalBg(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="prod-modal-title">➕ Tambah Produk</div>
+
+    <div class="fg">
+      <label class="fl">ID Produk (unik, tanpa spasi)</label>
+      <input class="fi" id="pm-id" placeholder="contoh: sewa-bot">
+    </div>
+    <div class="fg">
+      <label class="fl">Nama Produk</label>
+      <input class="fi" id="pm-title" placeholder="Sewa Bot">
+    </div>
+    <div class="fg">
+      <label class="fl">Judul Gambar Banner</label>
+      <input class="fi" id="pm-imgtitle" placeholder="SEWA BOT EVERNIGHT MULTIDEVICE">
+    </div>
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="fg" style="margin:0">
+        <label class="fl">Harga Tampil</label>
+        <input class="fi" id="pm-price" placeholder="Rp5.000">
+      </div>
+      <div class="fg" style="margin:0">
+        <label class="fl">Keterangan Stok</label>
+        <input class="fi" id="pm-avail" placeholder="Tersedia: Unlimited">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Kategori</label>
+      <select class="fsel fi" id="pm-cat">
+        <option value="bot-wa">Bot WA</option>
+        <option value="panel">Panel</option>
+        <option value="source-code">Source Code</option>
+        <option value="lainnya">Lainnya</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">Deskripsi Produk</label>
+      <textarea class="fta" id="pm-desc" placeholder="Deskripsi singkat produk kamu..."></textarea>
+    </div>
+
+    <div class="fl" style="margin-bottom:10px">VARIAN & HARGA</div>
+    <div id="pm-varians"></div>
+    <button class="btn-add-var" onclick="addVarian()">+ Tambah Varian</button>
+
+    <div class="fl" style="margin:16px 0 10px">KEUNGGULAN PRODUK (max 4)</div>
+    <div style="display:grid;grid-template-columns:50px 1fr 1fr;gap:4px;margin-bottom:6px">
+      <div style="font-size:10px;color:var(--muted2);font-family:'Space Mono',monospace;padding:4px">ICON</div>
+      <div style="font-size:10px;color:var(--muted2);font-family:'Space Mono',monospace;padding:4px">NAMA</div>
+      <div style="font-size:10px;color:var(--muted2);font-family:'Space Mono',monospace;padding:4px">DESKRIPSI</div>
+    </div>
+    <div id="pm-features"></div>
+    <button class="btn-add-var" onclick="addFeature()">+ Tambah Fitur</button>
+
+    <div class="action-row" style="margin-top:24px">
+      <button class="btn-save" onclick="saveProdModal()" style="flex:1">💾 Simpan Produk</button>
+      <button class="btn-secondary" onclick="closeProdModal()">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">Yakin?</div>
+    <div class="confirm-msg" id="confirm-msg">Aksi ini tidak bisa dibatalkan.</div>
+    <div class="confirm-btns">
+      <button class="btn-danger" id="confirm-yes" onclick="doConfirm()">Ya, Hapus</button>
+      <button class="btn-secondary" onclick="closeConfirm()">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====================================================
+   CONFIG
+   ==================================================== */
+const PASS = '085257';
+const API_KEY = 'dtdb_96c3999f076907637bf7f2a2b53f6018e6fdd57bc5ea32d5ed33d14dcdd97264';
+const BASE_URL = 'https://dongtube.my.id/api/v1/kv';
+const HEADERS = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` };
+
+/* ====================================================
+   LOGIN
+   ==================================================== */
+function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  if (pw === PASS) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadAll();
+  } else {
+    const err = document.getElementById('login-err');
+    err.style.display = 'block';
+    document.getElementById('pw-input').value = '';
+    setTimeout(() => err.style.display = 'none', 3000);
+  }
+}
+function doLogout() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pw-input').value = '';
+}
+
+/* ====================================================
+   DONGTUBE API
+   ==================================================== */
+async function dbGet(key) {
+  try {
+    const r = await fetch(`${BASE_URL}/${key}`, { headers: HEADERS });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.value ? JSON.parse(d.value) : null;
+  } catch { return null; }
+}
+async function dbSet(key, value) {
+  try {
+    const r = await fetch(`${BASE_URL}/${key}`, {
+      method: 'PUT',
+      headers: HEADERS,
+      body: JSON.stringify({ value: JSON.stringify(value) })
+    });
+    return r.ok;
+  } catch (e) { console.error('dbSet error:', e); return false; }
+}
+async function dbDelete(key) {
+  try {
+    const r = await fetch(`${BASE_URL}/${key}`, { method: 'DELETE', headers: HEADERS });
+    return r.ok;
+  } catch (e) { console.error('dbDelete error:', e); return false; }
+}
+async function dbList() {
+  try {
+    const r = await fetch(`${BASE_URL}`, { headers: HEADERS });
+    if (!r.ok) return [];
+    const d = await r.json();
+    return d.keys || d || [];
+  } catch { return []; }
+}
+
+/* ====================================================
+   TOAST
+   ==================================================== */
+let toastTimer;
+function showToast(msg, type = 'loading') {
+  const t = document.getElementById('toast');
+  t.className = `toast ${type}`;
+  t.innerHTML = type === 'loading' ? `<span class="spinner"></span> ${msg}` :
+                type === 'success' ? `✅ ${msg}` : `❌ ${msg}`;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  if (type !== 'loading') toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+function hideToast() { document.getElementById('toast').classList.remove('show'); }
+
+/* ====================================================
+   TABS
+   ==================================================== */
+function switchTab(name, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tnav').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  el.classList.add('active');
+  if (name === 'storage') loadStorageInfo();
+  if (name === 'tampilan') { loadProdukImg(); loadHeroSlides(); }
+}
+
+/* ====================================================
+   LOAD ALL
+   ==================================================== */
+let cfg = {};
+let prodImgData = {};
+let heroSlidesList = [];
+async function loadAll() {
+  showToast('Memuat data store...', 'loading');
+  const [store, kontak, prods, marquee, tampilan, fitur, drawer, imgProduk, heroSlides] = await Promise.all([
+    dbGet('store-info'),
+    dbGet('store-kontak'),
+    dbGet('store-produk'),
+    dbGet('store-marquee'),
+    dbGet('store-tampilan'),
+    dbGet('store-fitur'),
+    dbGet('store-drawer'),
+    dbGet('store-img-produk'),
+    dbGet('store-hero-slides'),
+  ]);
+  cfg.store = store || { nama:'UnoTech Store', tagline:'Panel Pterodactyl VPS Legal', desc:'Panel pterodactyl premium yang menggunakan vps legal.' };
+  cfg.kontak = kontak || { adminWa:'6285624597059', grupBuyer:'', cs2:'' };
+  cfg.produk = prods || getDefaultProducts();
+  cfg.marquee = marquee || ['Bot WA — Rp2.000','SC Evernight Ai — Rp75.000','Sewa Bot — Rp5.000','Panel Bot WA — Rp2.000'];
+  cfg.tampilan = tampilan || { accent:'#7c3aed', accent2:'#d946ef', avatar:'U' };
+  cfg.fitur = fitur || { maintenance:false, 'badge-baru':true, rating:true };
+  cfg.drawer = drawer || [
+    { label:'🏠 Home', url:'#' },
+    { label:'📱 Beli OTP', url:'#' },
+    { label:'🔄 Perpanjang Panel', url:'#' },
+    { label:'🔍 Track Order', url:'#' },
+  ];
+  prodImgData = imgProduk || {};
+  heroSlidesList = heroSlides || [];
+  renderAll();
+  hideToast();
+  showToast('Data berhasil dimuat!', 'success');
+}
+
+function renderAll() {
+  // Store
+  document.getElementById('s-nama').value = cfg.store.nama || '';
+  document.getElementById('s-tagline').value = cfg.store.tagline || '';
+  document.getElementById('s-desc').value = cfg.store.desc || '';
+  // Kontak
+  document.getElementById('s-admin-wa').value = cfg.kontak.adminWa || '';
+  document.getElementById('s-grup-buyer').value = cfg.kontak.grupBuyer || '';
+  document.getElementById('s-cs2').value = cfg.kontak.cs2 || '';
+  // Tampilan
+  document.getElementById('t-accent').value = cfg.tampilan.accent || '#7c3aed';
+  document.getElementById('t-accent-hex').value = cfg.tampilan.accent || '#7c3aed';
+  document.getElementById('t-accent2').value = cfg.tampilan.accent2 || '#d946ef';
+  document.getElementById('t-accent2-hex').value = cfg.tampilan.accent2 || '#d946ef';
+  document.getElementById('t-avatar').value = cfg.tampilan.avatar || 'K';
+  // Fitur toggles
+  Object.keys(cfg.fitur).forEach(k => {
+    const el = document.getElementById(`tg-${k}`);
+    if (el) { el.className = 'toggle' + (cfg.fitur[k] ? ' on' : ''); }
+  });
+  // Produk
+  renderProdList();
+  renderProdukImgList();
+  // Marquee
+  renderMarqueeItems();
+  // Drawer
+  renderDrawerItems();
+}
+
+/* ====================================================
+   STORE INFO
+   ==================================================== */
+async function saveStore() {
+  cfg.store = {
+    nama: document.getElementById('s-nama').value.trim(),
+    tagline: document.getElementById('s-tagline').value.trim(),
+    desc: document.getElementById('s-desc').value.trim(),
+  };
+  showToast('Menyimpan info store...', 'loading');
+  const ok = await dbSet('store-info', cfg.store);
+  ok ? showToast('Info store tersimpan!', 'success') : showToast('Gagal simpan!', 'error');
+}
+async function saveKontak() {
+  cfg.kontak = {
+    adminWa: document.getElementById('s-admin-wa').value.trim(),
+    grupBuyer: document.getElementById('s-grup-buyer').value.trim(),
+    cs2: document.getElementById('s-cs2').value.trim(),
+  };
+  showToast('Menyimpan kontak...', 'loading');
+  const ok = await dbSet('store-kontak', cfg.kontak);
+  ok ? showToast('Kontak tersimpan!', 'success') : showToast('Gagal simpan!', 'error');
+}
+
+/* ====================================================
+   DRAWER MENU
+   ==================================================== */
+function renderDrawerItems() {
+  const c = document.getElementById('drawer-items');
+  c.innerHTML = '';
+  cfg.drawer.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'marquee-item';
+    row.innerHTML = `
+      <input class="fi" value="${item.label}" placeholder="🏠 Nama Menu" style="flex:2;margin:0" oninput="cfg.drawer[${i}].label=this.value">
+      <input class="fi" value="${item.url}" placeholder="https://..." style="flex:3;margin:0" oninput="cfg.drawer[${i}].url=this.value">
+      <button class="btn-rm-var" onclick="removeDrawerItem(${i})">×</button>`;
+    c.appendChild(row);
+  });
+}
+function addDrawerItem() {
+  cfg.drawer.push({ label:'', url:'#' });
+  renderDrawerItems();
+}
+function removeDrawerItem(i) {
+  cfg.drawer.splice(i, 1);
+  renderDrawerItems();
+}
+async function saveDrawer() {
+  showToast('Menyimpan menu...', 'loading');
+  const ok = await dbSet('store-drawer', cfg.drawer);
+  ok ? showToast('Menu tersimpan!', 'success') : showToast('Gagal simpan!', 'error');
+}
+
+/* ====================================================
+   PRODUK
+   ==================================================== */
+function getDefaultProducts() {
+  return [
+    { id:'sewa-bot', title:'Sewa Bot', imgTitle:'SEWA BOT EVERNIGHT MULTIDEVICE', price:'Rp5.000', available:'Tersedia hingga Rp90.000', cat:'bot-wa', desc:'Sewa bot untuk jaga grup dengan 1800+ fitur aktif.', varians:[{name:'1 minggu',price:'Rp5.000'},{name:'1 bulan',price:'Rp15.000'}], features:[{icon:'💬',name:'Bot WA',desc:'Langsung aktif di grup'},{icon:'⚡',name:'1800+ Fitur',desc:'Command lengkap'}] },
+    { id:'panel', title:'Panel Bot WA', imgTitle:'PANEL PTERO PREMIUM', price:'Rp2.000', available:'Tersedia hingga Rp50.000', cat:'panel', desc:'Panel pterodactyl VPS legal.', varians:[{name:'1 minggu',price:'Rp2.000'},{name:'1 bulan',price:'Rp7.000'}], features:[{icon:'🖥️',name:'VPS Legal',desc:'Berlisensi resmi'},{icon:'🔒',name:'Aman',desc:'Uptime 99.9%'}] },
+    { id:'script', title:'SC Evernight Ai', imgTitle:'EVERNIGHT V10.5 PREMIUM', price:'Rp75.000', available:'Tersedia: Unlimited', cat:'source-code', desc:'Source code premium 1800+ fitur.', varians:[{name:'Download',price:'Rp75.000'}], features:[{icon:'📦',name:'Full Source',desc:'Tanpa enkripsi'},{icon:'🔄',name:'Update Gratis',desc:'Versi terbaru'}] }
+  ];
+}
+
+function renderProdList() {
+  const list = document.getElementById('prod-list');
+  list.innerHTML = '';
+  document.getElementById('prod-count-badge').textContent = `${cfg.produk.length} produk`;
+  cfg.produk.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'prod-item';
+    el.innerHTML = `
+      <div class="prod-item-head">
+        <div>
+          <div class="prod-item-title">${p.title}</div>
+          <div class="prod-item-id">#${p.id} · ${p.cat} · ${p.varians.length} varian</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-icon edit" onclick="openEditProd(${i})">✏️</button>
+          <button class="btn-icon" onclick="confirmDeleteProd(${i})">🗑️</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted2);line-height:1.5">${p.desc || ''}</div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        ${p.varians.map(v=>`<span style="font-family:'Space Mono',monospace;font-size:10px;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:3px 8px;color:var(--cyan)">${v.name}: ${v.price}</span>`).join('')}
+      </div>`;
+    list.appendChild(el);
+  });
+}
+
+let editingProdIdx = null;
+
+function openAddProd() {
+  editingProdIdx = null;
+  document.getElementById('prod-modal-title').textContent = '➕ Tambah Produk';
+  document.getElementById('pm-id').value = '';
+  document.getElementById('pm-title').value = '';
+  document.getElementById('pm-imgtitle').value = '';
+  document.getElementById('pm-price').value = '';
+  document.getElementById('pm-avail').value = '';
+  document.getElementById('pm-desc').value = '';
+  document.getElementById('pm-cat').value = 'bot-wa';
+  document.getElementById('pm-id').removeAttribute('disabled');
+  renderModalVarians([{name:'',price:''}]);
+  renderModalFeatures([{icon:'',name:'',desc:''}]);
+  document.getElementById('prod-modal').classList.add('open');
+}
+function openEditProd(i) {
+  editingProdIdx = i;
+  const p = cfg.produk[i];
+  document.getElementById('prod-modal-title').textContent = `✏️ Edit: ${p.title}`;
+  document.getElementById('pm-id').value = p.id;
+  document.getElementById('pm-id').setAttribute('disabled', true);
+  document.getElementById('pm-title').value = p.title;
+  document.getElementById('pm-imgtitle').value = p.imgTitle || '';
+  document.getElementById('pm-price').value = p.price;
+  document.getElementById('pm-avail').value = p.available || '';
+  document.getElementById('pm-desc').value = p.desc || '';
+  document.getElementById('pm-cat').value = p.cat || 'bot-wa';
+  renderModalVarians(p.varians);
+  renderModalFeatures(p.features || []);
+  document.getElementById('prod-modal').classList.add('open');
+}
+function closeProdModal() { document.getElementById('prod-modal').classList.remove('open'); }
+function closeProdModalBg(e) { if(e.target.id==='prod-modal') closeProdModal(); }
+
+let modalVarians = [];
+let modalFeatures = [];
+
+function renderModalVarians(varians) {
+  modalVarians = JSON.parse(JSON.stringify(varians));
+  const c = document.getElementById('pm-varians');
+  c.innerHTML = '';
+  modalVarians.forEach((v, i) => {
+    const row = document.createElement('div');
+    row.className = 'varian-row';
+    row.innerHTML = `
+      <input class="fi varian-name" placeholder="Nama varian" value="${v.name}" oninput="modalVarians[${i}].name=this.value">
+      <input class="fi varian-price" placeholder="Rp0" value="${v.price}" oninput="modalVarians[${i}].price=this.value">
+      <button class="btn-rm-var" onclick="removeVarian(${i})">×</button>`;
+    c.appendChild(row);
+  });
+}
+function addVarian() { modalVarians.push({name:'',price:''}); renderModalVarians(modalVarians); }
+function removeVarian(i) { modalVarians.splice(i,1); renderModalVarians(modalVarians); }
+
+function renderModalFeatures(features) {
+  modalFeatures = JSON.parse(JSON.stringify(features));
+  const c = document.getElementById('pm-features');
+  c.innerHTML = '';
+  modalFeatures.forEach((f, i) => {
+    const row = document.createElement('div');
+    row.className = 'feature-row';
+    row.style.marginBottom = '8px';
+    row.innerHTML = `
+      <input class="fi" placeholder="🎯" value="${f.icon}" oninput="modalFeatures[${i}].icon=this.value" style="text-align:center">
+      <input class="fi" placeholder="Nama fitur" value="${f.name}" oninput="modalFeatures[${i}].name=this.value">
+      <input class="fi" placeholder="Deskripsi" value="${f.desc}" oninput="modalFeatures[${i}].desc=this.value">`;
+    c.appendChild(row);
+  });
+}
+function addFeature() {
+  if (modalFeatures.length >= 4) return showToast('Maksimal 4 fitur!', 'error');
+  modalFeatures.push({icon:'',name:'',desc:''});
+  renderModalFeatures(modalFeatures);
+}
+
+function saveProdModal() {
+  const id = document.getElementById('pm-id').value.trim().replace(/\s/g,'');
+  const title = document.getElementById('pm-title').value.trim();
+  if (!id || !title) return showToast('ID dan Nama wajib diisi!', 'error');
+  const prod = {
+    id, title,
+    imgTitle: document.getElementById('pm-imgtitle').value.trim(),
+    price: document.getElementById('pm-price').value.trim(),
+    available: document.getElementById('pm-avail').value.trim(),
+    cat: document.getElementById('pm-cat').value,
+    desc: document.getElementById('pm-desc').value.trim(),
+    varians: modalVarians.filter(v => v.name),
+    features: modalFeatures.filter(f => f.name),
+  };
+  if (editingProdIdx !== null) {
+    cfg.produk[editingProdIdx] = prod;
+  } else {
+    if (cfg.produk.find(p => p.id === id)) return showToast('ID sudah dipakai!', 'error');
+    cfg.produk.push(prod);
+  }
+  renderProdList();
+  closeProdModal();
+  showToast('Produk diupdate! Jangan lupa klik Simpan Semua.', 'success');
+}
+
+async function saveProducts() {
+  showToast('Menyimpan produk...', 'loading');
+  const ok = await dbSet('store-produk', cfg.produk);
+  ok ? showToast('Semua produk tersimpan!', 'success') : showToast('Gagal simpan!', 'error');
+}
+
+let deleteProdIdx = null;
+function confirmDeleteProd(i) {
+  deleteProdIdx = i;
+  openConfirm(`Hapus "${cfg.produk[i].title}"?`, 'Produk ini akan dihapus dari list. Klik Simpan Semua untuk permanen.', () => {
+    cfg.produk.splice(deleteProdIdx, 1);
+    renderProdList();
+    showToast('Produk dihapus! Jangan lupa Simpan.', 'success');
+  });
+}
+
+/* ====================================================
+   MARQUEE
+   ==================================================== */
+function renderMarqueeItems() {
+  const c = document.getElementById('marquee-items');
+  c.innerHTML = '';
+  cfg.marquee.forEach((text, i) => {
+    const row = document.createElement('div');
+    row.className = 'marquee-item';
+    row.innerHTML = `
+      <input class="fi" value="${text}" placeholder="Teks marquee..." style="flex:1;margin:0" oninput="cfg.marquee[${i}]=this.value">
+      <button class="btn-rm-var" onclick="removeMarqueeItem(${i})">×</button>`;
+    c.appendChild(row);
+  });
+}
+function addMarqueeItem() { cfg.marquee.push(''); renderMarqueeItems(); }
+function removeMarqueeItem(i) { cfg.marquee.splice(i,1); renderMarqueeItems(); }
+async function saveMarquee() {
+  showToast('Menyimpan marquee...', 'loading');
+  const ok = await dbSet('store-marquee', cfg.marquee);
+  ok ? showToast('Marquee tersimpan!', 'success') : showToast('Gagal simpan!', 'error');
+}
+
+/* ====================================================
+   BACKGROUND MANAGER
+   ==================================================== */
+let currentBgType = 'default';
+let currentMeshTheme = 'purple';
+
+function selectBgType(type) {
+  currentBgType = type;
+  ['default','gradient','image','mesh'].forEach(t => {
+    document.getElementById(`bgt-${t}`).classList.toggle('active', t === type);
+  });
+  document.getElementById('bg-gradient-opts').style.display = type === 'gradient' ? 'block' : 'none';
+  document.getElementById('bg-image-opts').style.display = type === 'image' ? 'block' : 'none';
+  document.getElementById('bg-mesh-opts').style.display = type === 'mesh' ? 'block' : 'none';
+  updateBgPreview();
+}
+
+function selectGradPreset(el) {
+  document.querySelectorAll('.grad-preset').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('bg-grad-custom').value = el.dataset.grad;
+  updateBgPreview();
+}
+
+function selectMeshTheme(theme, el) {
+  currentMeshTheme = theme;
+  document.querySelectorAll('#bg-mesh-opts .bg-type-btn').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  updateBgPreview();
+}
+
+function buildCustomGrad() {
+  const c1 = document.getElementById('bg-c1-hex').value || document.getElementById('bg-c1').value;
+  const c2 = document.getElementById('bg-c2-hex').value || document.getElementById('bg-c2').value;
+  const grad = `linear-gradient(135deg,${c1} 0%,${c2} 100%)`;
+  document.getElementById('bg-grad-custom').value = grad;
+  updateBgPreview();
+}
+
+const MESH_THEMES = {
+  purple: 'radial-gradient(ellipse at 20% 20%,rgba(124,58,237,0.6) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(217,70,239,0.5) 0%,transparent 50%),radial-gradient(ellipse at 60% 10%,rgba(59,130,246,0.3) 0%,transparent 45%),linear-gradient(135deg,#05050f 0%,#0d0520 100%)',
+  cyan: 'radial-gradient(ellipse at 20% 20%,rgba(0,229,255,0.4) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(0,255,136,0.35) 0%,transparent 50%),radial-gradient(ellipse at 60% 10%,rgba(59,130,246,0.3) 0%,transparent 45%),linear-gradient(135deg,#020d12 0%,#061220 100%)',
+  fire: 'radial-gradient(ellipse at 20% 20%,rgba(239,68,68,0.5) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(245,158,11,0.4) 0%,transparent 50%),radial-gradient(ellipse at 60% 10%,rgba(217,70,239,0.25) 0%,transparent 45%),linear-gradient(135deg,#0f0505 0%,#1a0a05 100%)',
+  ocean: 'radial-gradient(ellipse at 20% 20%,rgba(6,182,212,0.5) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(99,102,241,0.45) 0%,transparent 50%),radial-gradient(ellipse at 60% 10%,rgba(16,185,129,0.3) 0%,transparent 45%),linear-gradient(135deg,#020d10 0%,#050d1a 100%)',
+};
+
+function updateBgPreview() {
+  const preview = document.getElementById('bg-preview');
+  const label = document.getElementById('bg-preview-label');
+  if (currentBgType === 'default') {
+    preview.style.background = '#0a0a10';
+    preview.style.backgroundImage = '';
+    label.textContent = 'Default Dark';
+  } else if (currentBgType === 'gradient') {
+    const grad = document.getElementById('bg-grad-custom').value || 'linear-gradient(135deg,#0a0a10,#1a0a2e)';
+    preview.style.background = grad;
+    label.textContent = 'Custom Gradient';
+  } else if (currentBgType === 'image') {
+    const url = document.getElementById('bg-img-url').value;
+    const opacity = document.getElementById('bg-img-opacity').value / 100;
+    if (url) {
+      preview.style.backgroundImage = `linear-gradient(rgba(0,0,0,${opacity}),rgba(0,0,0,${opacity})),url('${url}')`;
+      preview.style.backgroundSize = 'cover';
+      preview.style.backgroundPosition = 'center';
+      label.textContent = 'Gambar Background';
+    } else {
+      preview.style.background = 'var(--bg3)';
+      label.textContent = 'Masukkan URL gambar';
+    }
+  } else if (currentBgType === 'mesh') {
+    preview.style.background = MESH_THEMES[currentMeshTheme] || MESH_THEMES.purple;
+    label.textContent = `Aurora Mesh — ${currentMeshTheme}`;
+  }
+}
+
+async function saveBg() {
+  let bgData = { type: currentBgType };
+  if (currentBgType === 'gradient') {
+    bgData.value = document.getElementById('bg-grad-custom').value || 'linear-gradient(135deg,#0a0a10,#1a0a2e)';
+  } else if (currentBgType === 'image') {
+    bgData.url = document.getElementById('bg-img-url').value.trim();
+    bgData.opacity = document.getElementById('bg-img-opacity').value;
+  } else if (currentBgType === 'mesh') {
+    bgData.theme = currentMeshTheme;
+  }
+  cfg.tampilan = cfg.tampilan || {};
+  cfg.tampilan.background = bgData;
+  showToast('Menyimpan background...', 'loading');
+  const ok = await dbSet('store-tampilan', cfg.tampilan);
+  ok ? showToast('Background tersimpan! ✨', 'success') : showToast('Gagal simpan!', 'error');
+}
+
+/* ====================================================
+   GAMBAR PRODUK MANAGER
+   ==================================================== */
+
+function renderProdukImgList() {
+  const c = document.getElementById('produk-img-list');
+  if (!cfg.produk || !cfg.produk.length) {
+    c.innerHTML = '<div style="color:var(--muted2);font-size:12px;padding:10px">Belum ada produk. Tambahkan produk di tab Produk terlebih dahulu.</div>';
+    return;
+  }
+  c.innerHTML = '';
+  cfg.produk.forEach(p => {
+    const url = prodImgData[p.id] || '';
+    const row = document.createElement('div');
+    row.className = 'prodimg-row';
+    row.innerHTML = `
+      <div class="prodimg-thumb" id="thumb-${p.id}" style="${url?`background-image:url('${url}')`:''}">${url?'':'📷'}</div>
+      <div class="prodimg-info">
+        <div class="prodimg-name">${p.title}</div>
+        <div class="prodimg-id">#${p.id}</div>
+        <input class="fi" id="imgurl-${p.id}" placeholder="https://i.ibb.co/... atau URL gambar lain" value="${url}" style="margin:0;font-size:12px" oninput="previewProdImg('${p.id}',this.value)">
+        <div class="fhint">Biarkan kosong untuk tampilan gradient default</div>
+      </div>`;
+    c.appendChild(row);
+  });
+}
+
+function previewProdImg(id, url) {
+  const thumb = document.getElementById(`thumb-${id}`);
+  if (!thumb) return;
+  if (url) {
+    thumb.style.backgroundImage = `url('${url}')`;
+    thumb.textContent = '';
+  } else {
+    thumb.style.backgroundImage = '';
+    thumb.textContent = '📷';
+  }
+  prodImgData[id] = url;
+}
+
+async function saveProdukImg() {
+  // Collect all current values
+  cfg.produk.forEach(p => {
+    const el = document.getElementById(`imgurl-${p.id}`);
+    if (el) prodImgData[p.id] = el.value.trim();
+  });
+  showToast('Menyimpan gambar produk...', 'loading');
+  const ok = await dbSet('store-img-produk', prodImgData);
+  ok ? showToast('Gambar produk tersimpan! ✨', 'success') : showToast('Gagal simpan!', 'error');
+}
+
+async function resetProdukImg() {
+  openConfirm('Reset Gambar Produk?', 'Semua URL gambar produk akan dihapus dan kembali ke tampilan gradient.', async () => {
+    prodImgData = {};
+    await dbDelete('store-img-produk');
+    renderProdukImgList();
+    showToast('Gambar produk direset!', 'success');
+  });
+}
+
+async function loadProdukImg() {
+  const data = await dbGet('store-img-produk');
+  prodImgData = data || {};
+  renderProdukImgList();
+}
+
+/* ====================================================
+   HERO SLIDER MANAGER
+   ==================================================== */
+
+function renderHeroSlideList() {
+  const c = document.getElementById('hero-slide-list');
+  c.innerHTML = '';
+  if (!heroSlidesList.length) {
+    c.innerHTML = '<div class="info-banner" style="margin:0">Slide kosong — otomatis dari produk. Tambah slide untuk kustomisasi.</div>';
+    return;
+  }
+  heroSlidesList.forEach((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'slide-item';
+    el.innerHTML = `
+      <div class="slide-item-head">
+        <div class="slide-num">SLIDE ${i + 1}</div>
+        <button class="btn-icon" style="color:var(--red)" onclick="removeHeroSlide(${i})">×</button>
+      </div>
+      <div class="slide-preview" id="sp-${i}" style="${s.imgUrl?`background-image:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),url('${s.imgUrl}')`:''}">${!s.imgUrl?'Preview gambar':''}
+        <div class="slide-preview-overlay" id="spo-${i}">${s.title||''}</div>
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="fl">Judul Slide</label>
+        <input class="fi" placeholder="Sewa bot murah meriah" value="${s.title||''}" oninput="heroSlidesList[${i}].title=this.value;document.getElementById('spo-${i}').textContent=this.value" style="margin:0">
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="fl">Badge (teks kecil atas)</label>
+        <input class="fi" placeholder="Sewa Bot" value="${s.badge||''}" oninput="heroSlidesList[${i}].badge=this.value" style="margin:0">
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="fl">Subtitle / Deskripsi singkat</label>
+        <input class="fi" placeholder="Kamu ingin punya bot sendiri? Ayo sewa bot..." value="${s.subtitle||''}" oninput="heroSlidesList[${i}].subtitle=this.value" style="margin:0">
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="fl">Teks Overlay Bawah</label>
+        <input class="fi" placeholder="Sewa Bot Evernight Multidevice" value="${s.titleOverlay||''}" oninput="heroSlidesList[${i}].titleOverlay=this.value" style="margin:0">
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="fl">Label Tombol</label>
+        <input class="fi" placeholder="Lihat →" value="${s.btnLabel||'Lihat →'}" oninput="heroSlidesList[${i}].btnLabel=this.value" style="margin:0">
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="fl">Index Produk (0 = produk pertama)</label>
+        <input class="fi" type="number" placeholder="0" value="${s.prodIdx??''}" oninput="heroSlidesList[${i}].prodIdx=parseInt(this.value)||0" style="margin:0">
+      </div>
+      <div class="fg" style="margin-bottom:6px">
+        <label class="fl">URL Gambar Slide (opsional)</label>
+        <input class="fi" placeholder="https://i.ibb.co/... atau kosongkan untuk gradient" value="${s.imgUrl||''}" oninput="heroSlidesList[${i}].imgUrl=this.value;updateSlidePrev(${i},this.value)" style="margin:0">
+        <div class="fhint">Biarkan kosong untuk tampilan gradient animasi otomatis</div>
+      </div>`;
+    c.appendChild(el);
+  });
+}
+
+function updateSlidePrev(i, url) {
+  const sp = document.getElementById(`sp-${i}`);
+  if (!sp) return;
+  if (url) {
+    sp.style.backgroundImage = `linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),url('${url}')`;
+    sp.innerHTML = '';
+  } else {
+    sp.style.backgroundImage = '';
+    sp.innerHTML = `Preview gambar<div class="slide-preview-overlay" id="spo-${i}">${heroSlidesList[i]?.title||''}</div>`;
+  }
+}
+
+function addHeroSlide() {
+  heroSlidesList.push({ badge:'', title:'', subtitle:'', titleOverlay:'', btnLabel:'Lihat →', prodIdx:0, imgUrl:'' });
+  renderHeroSlideList();
+}
+function removeHeroSlide(i) { heroSlidesList.splice(i,1); renderHeroSlideList(); }
+
+async function saveHeroSlides() {
+  showToast('Menyimpan hero slider...', 'loading');
+  const ok = await dbSet('store-hero-slides', heroSlidesList);
+  ok ? showToast('Hero slider tersimpan! ✨', 'success') : showToast('Gagal simpan!', 'error');
+}
+
+async function resetHeroSlides() {
+  openConfirm('Reset Hero Slider?', 'Slider akan kembali otomatis mengambil dari data produk.', async () => {
+    heroSlidesList = [];
+    await dbDelete('store-hero-slides');
+    renderHeroSlideList();
+    showToast('Hero slider direset ke otomatis!', 'success');
+  });
+}
+
+async function loadHeroSlides() {
+  const data = await dbGet('store-hero-slides');
+  heroSlidesList = data || [];
+  renderHeroSlideList();
+}
+
+function resetBg() {
+  selectBgType('default');
+  showToast('Background direset ke default.', 'success');
+}
+
+// Wire up color pickers for bg & tampilan — merged into single DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  // Background color pickers
+  const c1 = document.getElementById('bg-c1');
+  const c2 = document.getElementById('bg-c2');
+  if (c1) {
+    c1.addEventListener('input', () => { document.getElementById('bg-c1-hex').value = c1.value; updateBgPreview(); });
+    document.getElementById('bg-c1-hex').addEventListener('input', function(){ if(/^#[0-9a-fA-F]{6}$/.test(this.value)){c1.value=this.value;} updateBgPreview(); });
+  }
+  if (c2) {
+    c2.addEventListener('input', () => { document.getElementById('bg-c2-hex').value = c2.value; updateBgPreview(); });
+    document.getElementById('bg-c2-hex').addEventListener('input', function(){ if(/^#[0-9a-fA-F]{6}$/.test(this.value)){c2.value=this.value;} updateBgPreview(); });
+  }
+  document.getElementById('bg-img-url')?.addEventListener('input', updateBgPreview);
+  document.getElementById('bg-img-opacity')?.addEventListener('input', updateBgPreview);
+
+  // Tampilan (tema warna) color pickers
+  const ac = document.getElementById('t-accent');
+  const ac2 = document.getElementById('t-accent2');
+  if(ac) ac.addEventListener('input', () => document.getElementById('t-accent-hex').value = ac.value);
+  if(ac2) ac2.addEventListener('input', () => document.getElementById('t-accent2-hex').value = ac2.value);
+  document.getElementById('t-accent-hex')?.addEventListener('input', function() { if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('t-accent').value = this.value; });
+  document.getElementById('t-accent2-hex')?.addEventListener('input', function() { if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('t-accent2').value = this.value; });
+});
+async function saveTampilan() {
+  cfg.tampilan = {
+    accent: document.getElementById('t-accent-hex').value.trim() || document.getElementById('t-accent').value,
+    accent2: document.getElementById('t-accent2-hex').value.trim() || document.getElementById('t-accent2').value,
+    avatar: document.getElementById('t-avatar').value.trim().charAt(0).toUpperCase() || 'K',
+  };
+  showToast('Menyimpan tampilan...', 'loading');
+  const ok = await dbSet('store-tampilan', cfg.tampilan);
+  ok ? showToast('Tampilan tersimpan!', 'success') : showToast('Gagal simpan!', 'error');
+}
+
+function toggleFitur(key) {
+  cfg.fitur[key] = !cfg.fitur[key];
+  const el = document.getElementById(`tg-${key}`);
+  if (el) el.className = 'toggle' + (cfg.fitur[key] ? ' on' : '');
+}
+async function saveFitur() {
+  showToast('Menyimpan pengaturan...', 'loading');
+  const ok = await dbSet('store-fitur', cfg.fitur);
+  ok ? showToast('Pengaturan tersimpan!', 'success') : showToast('Gagal simpan!', 'error');
+}
+
+/* ====================================================
+   STORAGE INFO
+   ==================================================== */
+async function loadStorageInfo() {
+  document.getElementById('storage-info').innerHTML = `<div style="text-align:center;padding:20px"><div class="spinner"></div><div style="margin-top:10px;color:var(--muted2);font-size:12px">Mengambil info...</div></div>`;
+  try {
+    const r = await fetch('https://dongtube.my.id/api/v1/account', { headers: HEADERS });
+    const d = await r.json();
+    const used = d.storage_used || 0;
+    const total = d.storage_limit || 10485760;
+    const pct = Math.round((used / total) * 100);
+    const fmtBytes = b => b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(2) + ' MB';
+    document.getElementById('storage-info').innerHTML = `
+      <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted2);margin-bottom:6px">${pct}% terpakai</div>
+      <div class="storage-bar-wrap"><div class="storage-bar-fill" style="width:${pct}%"></div></div>
+      <div class="storage-stats">
+        <div class="stat-box"><div class="stat-val">${fmtBytes(used)}</div><div class="stat-label">Terpakai</div></div>
+        <div class="stat-box"><div class="stat-val">${fmtBytes(total - used)}</div><div class="stat-label">Tersedia</div></div>
+        <div class="stat-box"><div class="stat-val">${fmtBytes(total)}</div><div class="stat-label">Total</div></div>
+      </div>`;
+  } catch {
+    document.getElementById('storage-info').innerHTML = `<div style="color:var(--red);font-size:12px;padding:10px">Gagal memuat info storage.</div>`;
+  }
+}
+
+let keyShown = false;
+function toggleShowKey() {
+  keyShown = !keyShown;
+  document.getElementById('api-key-display').textContent = keyShown ? API_KEY : '••••••••••••••••••••••••••••••••';
+}
+
+async function loadAllKeys() {
+  document.getElementById('all-keys').innerHTML = '<div class="spinner"></div>';
+  const keys = await dbList();
+  if (!keys.length) {
+    document.getElementById('all-keys').textContent = 'Belum ada data tersimpan.';
+    return;
+  }
+  const arr = Array.isArray(keys) ? keys : Object.keys(keys);
+  document.getElementById('all-keys').innerHTML = arr.map(k =>
+    `<div style="padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <span>${typeof k === 'string' ? k : k.key || JSON.stringify(k)}</span>
+      <span style="color:var(--green);font-size:10px">●</span>
+    </div>`
+  ).join('');
+}
+
+/* ====================================================
+   CONFIRM / RESET
+   ==================================================== */
+let confirmCallback = null;
+function openConfirm(title, msg, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  confirmCallback = cb;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function doConfirm() {
+  closeConfirm();
+  if (confirmCallback) confirmCallback();
+}
+function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); }
+
+function confirmReset(type) {
+  const map = {
+    store: ['Reset Config Store?', 'Data nama store, tagline, kontak akan dihapus.', async () => { await dbDelete('store-info'); await dbDelete('store-kontak'); cfg.store = {}; cfg.kontak = {}; showToast('Config store direset!', 'success'); }],
+    produk: ['Reset Semua Produk?', 'Seluruh data produk akan dihapus permanen!', async () => { await dbDelete('store-produk'); cfg.produk = []; renderProdList(); showToast('Produk direset!', 'success'); }],
+    all: ['HAPUS SEMUA DATA?', 'Seluruh konfigurasi store akan terhapus. Tidak bisa dibatalkan!', async () => {
+      showToast('Menghapus semua data...', 'loading');
+      const keys = ['store-info','store-kontak','store-produk','store-marquee','store-tampilan','store-fitur','store-drawer'];
+      await Promise.all(keys.map(k => dbDelete(k)));
+      showToast('Semua data dihapus!', 'success');
+    }],
+  };
+  const [title, msg, cb] = map[type];
+  openConfirm(title, msg, cb);
+}
+</script>
+</body>
+</html>
