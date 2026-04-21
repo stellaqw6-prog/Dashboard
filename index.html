@@ -914,6 +914,29 @@ body::before {
 }
 .confirm-btns { display: flex; gap: 10px; }
 .confirm-btns button { flex: 1; }
+
+/* CLEANUP SECTION */
+.cleanup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.cleanup-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;position:relative;overflow:hidden;}
+.cleanup-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.03),transparent 70%);pointer-events:none;}
+.cleanup-card-icon{font-size:24px;margin-bottom:6px;}
+.cleanup-card-label{font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.cleanup-card-val{font-family:'Space Mono',monospace;font-size:13px;color:var(--cyan);margin-bottom:8px;}
+.btn-cleanup{width:100%;padding:8px;border-radius:8px;border:1px solid var(--red-dim,rgba(255,61,90,0.12));background:rgba(255,61,90,0.08);color:var(--red);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s;}
+.btn-cleanup:hover{background:rgba(255,61,90,0.18);}
+.cleanup-log{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted2);min-height:80px;max-height:160px;overflow-y:auto;line-height:1.8;}
+.cleanup-log-entry{color:var(--green);}
+.cleanup-log-entry.warn{color:var(--orange);}
+.cleanup-log-entry.err{color:var(--red);}
+/* CHAT MANAGER */
+.gchat-admin-msg{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px;}
+.gchat-admin-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#d946ef);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.gchat-admin-body{flex:1;min-width:0;}
+.gchat-admin-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.gchat-admin-nick{font-size:11px;font-weight:600;color:var(--text);}
+.gchat-admin-time{font-size:9px;color:var(--muted);}
+.gchat-admin-text{font-size:11px;color:var(--muted2);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.btn-del-msg{padding:4px 8px;border-radius:6px;background:rgba(255,61,90,0.1);border:1px solid rgba(255,61,90,0.2);color:var(--red);font-size:10px;cursor:pointer;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -960,6 +983,9 @@ body::before {
     <button class="tnav" onclick="switchTab('tampilan',this)">🎨 Tampilan</button>
     <button class="tnav" onclick="switchTab('payment',this)">💳 Payment</button>
     <button class="tnav" onclick="switchTab('storage',this)">💾 Storage</button>
+    <button class="tnav" onclick="switchTab('downloader-cfg',this)">⬇️ Downloader</button>
+    <button class="tnav" onclick="switchTab('gchat-admin',this);loadAdminGchat()">💬 Chat</button>
+    <button class="tnav" onclick="switchTab('cleanup',this);refreshCleanupStats()">🗑 Cleanup</button>
   </div>
 
   <!-- ===== TAB: STORE ===== -->
@@ -1601,6 +1627,99 @@ URL lain: <b>https://...</b> → buka link baru · <b>wa:Teks</b> → kirim WA k
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+
+<!-- DOWNLOADER CONFIG TAB -->
+<div class="panel" id="tab-downloader-cfg">
+  <div class="section">
+    <div class="section-head"><div class="section-title">⬇️ Konfigurasi Downloader</div><div class="section-badge">API</div></div>
+    <div class="section-body">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:var(--muted2);line-height:1.7">
+        Fitur <strong style="color:var(--cyan)">Video Downloader</strong> (TikTok, Instagram, YouTube) sudah aktif di halaman store. TikTok <strong style="color:var(--green)">gratis</strong> tanpa API key. Instagram & YouTube butuh RapidAPI key.
+      </div>
+      <div class="fg">
+        <label class="fl">RapidAPI Key (Instagram + YouTube)</label>
+        <input type="text" class="fi" id="dl-rapidapi-key" placeholder="Masukkan RapidAPI Key kamu...">
+        <div class="fhint">Daftar gratis di <a href="https://rapidapi.com" target="_blank" style="color:var(--cyan)">rapidapi.com</a> — subscribe ke "Instagram Downloader" & "YT-API"</div>
+      </div>
+      <button class="btn-save" onclick="saveDlConfig()">💾 Simpan API Key</button>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-head"><div class="section-title">📊 Status Downloader</div><div class="section-badge">Info</div></div>
+    <div class="section-body">
+      <div id="dl-stats-info">
+        <div style="text-align:center;padding:20px;color:var(--muted)">Klik tombol untuk cek status</div>
+      </div>
+      <button class="btn-save" style="background:var(--cyan-dim);border-color:var(--cyan);color:var(--cyan)" onclick="loadDlStats()">📊 Cek Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- GLOBAL CHAT ADMIN TAB -->
+<div class="panel" id="tab-gchat-admin">
+  <div class="section">
+    <div class="section-head"><div class="section-title">💬 Kelola Chat Global</div><div class="section-badge">Moderasi</div></div>
+    <div class="section-body">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn-save" onclick="loadAdminGchat()">🔄 Refresh Pesan</button>
+      <button class="btn-save" style="background:rgba(255,149,0,.1);border-color:var(--orange);color:var(--orange)" onclick="adminGchatAnnounce()">📢 Kirim Pengumuman</button>
+      <button class="btn-save" style="background:var(--red-dim);border-color:var(--red);color:var(--red)" onclick="confirmClearGchat()">🗑 Hapus Semua Chat</button>
+    </div>
+    <div id="gchat-announce-box" style="display:none;margin-bottom:12px">
+      <input class="field-input" id="gchat-announce-input" placeholder="Teks pengumuman...">
+      <button class="btn-save" style="margin-top:8px" onclick="sendGchatAnnounce()">📢 Kirim</button>
+    </div>
+    <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:1px">PESAN TERBARU</div>
+    <div id="gchat-admin-list" style="max-height:400px;overflow-y:auto">
+      <div style="text-align:center;padding:20px;color:var(--muted)">Klik Refresh untuk memuat pesan</div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLEANUP TAB -->
+<div class="panel" id="tab-cleanup">
+  <div class="section">
+    <div class="section-head"><div class="section-title">🗑 Bersihkan Sampah Data</div><div class="section-badge">Maintenance</div></div>
+    <div class="section-body">
+    <div style="font-size:12px;color:var(--muted2);margin-bottom:14px;line-height:1.6">
+      Hapus data yang tidak diperlukan untuk menjaga performa Firebase dan mencegah penyimpanan penuh.
+    </div>
+    <div class="cleanup-grid">
+      <div class="cleanup-card">
+        <div class="cleanup-card-icon">💬</div>
+        <div class="cleanup-card-label">Chat Global</div>
+        <div class="cleanup-card-val" id="cleanup-chat-count">-</div>
+        <button class="btn-cleanup" onclick="cleanupGchat()">🗑 Hapus Chat Lama</button>
+      </div>
+      <div class="cleanup-card">
+        <div class="cleanup-card-icon">📦</div>
+        <div class="cleanup-card-label">Data Order</div>
+        <div class="cleanup-card-val" id="cleanup-orders-count">-</div>
+        <button class="btn-cleanup" onclick="cleanupOrders()">🗑 Hapus Order Lama</button>
+      </div>
+      <div class="cleanup-card">
+        <div class="cleanup-card-icon">⭐</div>
+        <div class="cleanup-card-label">Ulasan Global</div>
+        <div class="cleanup-card-val" id="cleanup-ulasan-count">-</div>
+        <button class="btn-cleanup" onclick="cleanupUlasan()">🗑 Hapus Ulasan Lama</button>
+      </div>
+      <div class="cleanup-card">
+        <div class="cleanup-card-icon">🔑</div>
+        <div class="cleanup-card-label">Total Keys DB</div>
+        <div class="cleanup-card-val" id="cleanup-keys-count">-</div>
+        <button class="btn-cleanup" onclick="refreshCleanupStats()">🔄 Refresh Stats</button>
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <button class="btn-save" style="width:100%;background:rgba(255,61,90,.08);border-color:var(--red);color:var(--red);margin-bottom:8px" onclick="cleanupAll()">🧹 Bersihkan Semua Sampah Sekarang</button>
+    </div>
+    <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:1px">LOG PEMBERSIHAN</div>
+    <div class="cleanup-log" id="cleanup-log">— Siap. Klik tombol untuk mulai bersihkan. —</div>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ====================================================
@@ -2513,6 +2632,194 @@ function confirmReset(type) {
   const [title, msg, cb] = map[type];
   openConfirm(title, msg, cb);
 }
+
+/* ====================================================
+   DOWNLOADER CONFIG
+   ==================================================== */
+async function saveDlConfig(){
+  const key=document.getElementById('dl-rapidapi-key').value.trim();
+  if(!key){showToast('Masukkan API key dulu!','error');return;}
+  showToast('Menyimpan...','loading');
+  const ok=await dbSet('store-dl-config',{rapidApiKey:key});
+  ok?showToast('API key tersimpan!','success'):showToast('Gagal simpan!','error');
+}
+
+async function loadDlStats(){
+  const el=document.getElementById('dl-stats-info');
+  el.innerHTML='<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';
+  try{
+    const cfg=await dbGet('store-dl-config');
+    el.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-family:'Space Mono',monospace;font-size:18px;color:var(--cyan)">${cfg?.rapidApiKey?'✅':'❌'}</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:4px">API Key</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-family:'Space Mono',monospace;font-size:18px;color:var(--green)">3</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:4px">Platform Aktif</div>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11px;color:var(--muted2)">
+        Platform: TikTok ✅ &nbsp;·&nbsp; Instagram ${cfg?.rapidApiKey?'✅':'⚠️ (butuh key)'} &nbsp;·&nbsp; YouTube ${cfg?.rapidApiKey?'✅':'⚠️ (butuh key)'}
+      </div>`;
+    if(cfg?.rapidApiKey){document.getElementById('dl-rapidapi-key').value=cfg.rapidApiKey;}
+  }catch{el.innerHTML='<div style="color:var(--red);font-size:12px">Gagal memuat statistik.</div>';}
+}
+
+/* ====================================================
+   GLOBAL CHAT ADMIN
+   ==================================================== */
+async function loadAdminGchat(){
+  const list=document.getElementById('gchat-admin-list');
+  list.innerHTML='<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';
+  const data=await dbGet('store-gchat');
+  const msgs=Array.isArray(data)?data:(data?Object.values(data):[]);
+  if(!msgs||!msgs.length){list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted2)">Belum ada chat.</div>';return;}
+  list.innerHTML=msgs.slice().reverse().slice(0,60).map((m,i)=>{
+    if(m.type==='system')return`<div style="text-align:center;font-size:10px;color:var(--muted);padding:4px 0;font-family:'Space Mono',monospace">[SYSTEM] ${m.text}</div>`;
+    const realIdx=msgs.length-1-i;
+    return`<div class="gchat-admin-msg">
+      <div class="gchat-admin-av">${(m.nick||'?').charAt(0).toUpperCase()}</div>
+      <div class="gchat-admin-body">
+        <div class="gchat-admin-head">
+          <span class="gchat-admin-nick">${m.nick||'User'}</span>
+          <span class="gchat-admin-time">${m.time?new Date(m.time).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'-'}</span>
+        </div>
+        <div class="gchat-admin-text">${(m.text||'').replace(/</g,'&lt;')}</div>
+      </div>
+      <button class="btn-del-msg" onclick="deleteGchatMsg(${realIdx})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function deleteGchatMsg(idx){
+  const data=await dbGet('store-gchat');
+  const msgs=Array.isArray(data)?data:(data?Object.values(data):[]);
+  if(idx<0||idx>=msgs.length)return;
+  msgs.splice(idx,1);
+  showToast('Menghapus pesan...','loading');
+  const ok=await dbSet('store-gchat',msgs);
+  ok?(showToast('Pesan dihapus!','success'),loadAdminGchat()):showToast('Gagal hapus!','error');
+}
+
+function adminGchatAnnounce(){
+  const box=document.getElementById('gchat-announce-box');
+  box.style.display=box.style.display==='none'?'block':'none';
+}
+
+async function sendGchatAnnounce(){
+  const txt=document.getElementById('gchat-announce-input').value.trim();
+  if(!txt){showToast('Isi pengumuman dulu!','error');return;}
+  const data=await dbGet('store-gchat');
+  const msgs=Array.isArray(data)?data:(data?Object.values(data):[]);
+  msgs.push({type:'system',text:'📢 ADMIN: '+txt,time:new Date().toISOString()});
+  showToast('Mengirim...','loading');
+  const ok=await dbSet('store-gchat',msgs);
+  if(ok){showToast('Pengumuman terkirim!','success');document.getElementById('gchat-announce-input').value='';document.getElementById('gchat-announce-box').style.display='none';loadAdminGchat();}
+  else showToast('Gagal kirim!','error');
+}
+
+async function confirmClearGchat(){
+  openConfirm('Hapus Semua Chat?','Seluruh riwayat chat global akan dihapus permanen!',async()=>{
+    showToast('Menghapus chat...','loading');
+    const ok=await dbSet('store-gchat',[]);
+    ok?(showToast('Semua chat dihapus!','success'),loadAdminGchat()):showToast('Gagal!','error');
+  });
+}
+
+/* ====================================================
+   CLEANUP
+   ==================================================== */
+function logCleanup(msg,type='ok'){
+  const log=document.getElementById('cleanup-log');
+  const ts=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const div=document.createElement('div');
+  div.className='cleanup-log-entry'+(type==='warn'?' warn':type==='err'?' err':'');
+  div.textContent=`[${ts}] ${msg}`;
+  log.appendChild(div);
+  log.scrollTop=log.scrollHeight;
+}
+
+async function refreshCleanupStats(){
+  logCleanup('Memuat statistik...');
+  try{
+    const [gchat,orders,ulasan,keys]=await Promise.all([
+      dbGet('store-gchat'),dbGet('store-orders'),dbGet('store-ulasan'),dbList()
+    ]);
+    const gchatCount=Array.isArray(gchat)?gchat.length:(gchat?Object.keys(gchat).length:0);
+    const ordersCount=Array.isArray(orders)?orders.length:(orders?Object.keys(orders).length:0);
+    const ulasanCount=Array.isArray(ulasan)?ulasan.length:(ulasan?Object.keys(ulasan).length:0);
+    const keysCount=Array.isArray(keys)?keys.length:0;
+    document.getElementById('cleanup-chat-count').textContent=gchatCount+' pesan';
+    document.getElementById('cleanup-orders-count').textContent=ordersCount+' data';
+    document.getElementById('cleanup-ulasan-count').textContent=ulasanCount+' ulasan';
+    document.getElementById('cleanup-keys-count').textContent=keysCount+' keys';
+    logCleanup(`Stats: Chat=${gchatCount}, Orders=${ordersCount}, Ulasan=${ulasanCount}, Keys=${keysCount}`);
+  }catch(e){logCleanup('Gagal memuat stats: '+e.message,'err');}
+}
+
+async function cleanupGchat(){
+  logCleanup('Membersihkan chat lama...');
+  try{
+    const data=await dbGet('store-gchat');
+    const msgs=Array.isArray(data)?data:(data?Object.values(data):[]);
+    if(msgs.length<=50){logCleanup(`Chat hanya ${msgs.length} pesan, tidak perlu dibersihkan`,'warn');return;}
+    const trimmed=msgs.slice(-50);
+    await dbSet('store-gchat',trimmed);
+    logCleanup(`✅ Chat: ${msgs.length} → 50 pesan (hapus ${msgs.length-50})`);
+    document.getElementById('cleanup-chat-count').textContent='50 pesan';
+    showToast('✅ Chat lama dihapus!','success');
+  }catch(e){logCleanup('Gagal: '+e.message,'err');}
+}
+
+async function cleanupOrders(){
+  logCleanup('Membersihkan order lama...');
+  try{
+    const data=await dbGet('store-orders');
+    const orders=Array.isArray(data)?data:(data?Object.values(data):[]);
+    if(!orders.length){logCleanup('Tidak ada data order','warn');return;}
+    const cutoff=new Date();cutoff.setMonth(cutoff.getMonth()-3);
+    const filtered=orders.filter(o=>{
+      if(!o.tanggal)return true;
+      const d=new Date(o.tanggal);
+      return isNaN(d)||d>cutoff;
+    });
+    const removed=orders.length-filtered.length;
+    if(!removed){logCleanup(`Order semua masih dalam 3 bulan (${orders.length} data)`,'warn');return;}
+    await dbSet('store-orders',filtered);
+    logCleanup(`✅ Orders: hapus ${removed} data lama (>3 bulan), sisa ${filtered.length}`);
+    document.getElementById('cleanup-orders-count').textContent=filtered.length+' data';
+    showToast(`✅ ${removed} order lama dihapus!`,'success');
+  }catch(e){logCleanup('Gagal: '+e.message,'err');}
+}
+
+async function cleanupUlasan(){
+  logCleanup('Membersihkan ulasan lama...');
+  try{
+    const data=await dbGet('store-ulasan');
+    const list=Array.isArray(data)?data:(data?Object.values(data):[]);
+    if(list.length<=100){logCleanup(`Ulasan hanya ${list.length}, tidak perlu dibersihkan`,'warn');return;}
+    const trimmed=list.slice(-100);
+    await dbSet('store-ulasan',trimmed);
+    logCleanup(`✅ Ulasan: ${list.length} → 100 (hapus ${list.length-100})`);
+    document.getElementById('cleanup-ulasan-count').textContent='100 ulasan';
+    showToast('✅ Ulasan lama dihapus!','success');
+  }catch(e){logCleanup('Gagal: '+e.message,'err');}
+}
+
+async function cleanupAll(){
+  logCleanup('=== MULAI BERSIHKAN SEMUA ===','warn');
+  await cleanupGchat();
+  await cleanupOrders();
+  await cleanupUlasan();
+  logCleanup('=== SELESAI CLEANUP ===');
+  await refreshCleanupStats();
+}
+
+// Auto-load cleanup stats on tab switch
+const origSwitchTab = typeof switchTab === 'function' ? switchTab : null;
+
 </script>
 </body>
 </html>
