@@ -302,7 +302,10 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
       </div>
     </div>
     <label class="l-label">Password</label>
-    <input class="l-input" type="tel" id="pw-input" placeholder="123456" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*" onkeydown="if(event.key==='Enter')doLogin()" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    <div style="position:relative">
+      <input class="l-input" type="password" id="pw-input" placeholder="••••••" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*" onkeydown="if(event.key==='Enter')doLogin()" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="padding-right:44px;width:100%">
+      <button type="button" onclick="(function(btn){var inp=document.getElementById('pw-input');var show=inp.type==='password';inp.type=show?'tel':'password';btn.textContent=show?'🙈':'👁️';})(this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:2px;color:rgba(255,255,255,0.4);transition:color .2s" title="Lihat/Sembunyikan password">👁️</button>
+    </div>
     <button class="btn-login" onclick="doLogin()">MASUK →</button>
     <div class="login-err" id="login-err">❌ Password salah! Coba lagi.</div>
     <div class="login-footer">SECURE ACCESS · v3.0 PREMIUM</div>
@@ -2129,6 +2132,11 @@ document.addEventListener('DOMContentLoaded',()=>{
       const el = document.getElementById('qs-users');
       if (el) el.textContent = count;
       renderUserList();
+      // Refresh member dashboard jika tab aktif
+      const memberTab = document.getElementById('tab-members');
+      if (memberTab && memberTab.classList.contains('active')) {
+        _renderMemberDashboard();
+      }
     });
   }
 
@@ -2213,7 +2221,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // Cek apakah sudah ada ban tab
     if (document.getElementById('tab-bans')) return;
 
-    // Tambah tab button
+    // Tambah tab button Ban System
     const tabsNav = document.querySelector('.tabs-nav');
     if (tabsNav) {
       const btn = document.createElement('button');
@@ -2228,9 +2236,22 @@ document.addEventListener('DOMContentLoaded',()=>{
         renderUserList();
       };
       tabsNav.appendChild(btn);
+
+      // Tambah tab button Members Dashboard
+      const btnMembers = document.createElement('button');
+      btnMembers.className = 'tnav';
+      btnMembers.id = 'tab-btn-members';
+      btnMembers.innerHTML = '👥 Members';
+      btnMembers.onclick = function () {
+        if (typeof window.switchTab === 'function') {
+          window.switchTab('members', btnMembers);
+        }
+        _renderMemberDashboard();
+      };
+      tabsNav.appendChild(btnMembers);
     }
 
-    // Tambah panel konten
+    // Tambah panel konten Ban System
     const app = document.getElementById('app');
     if (!app) return;
     const content = app.querySelector('.content') || app;
@@ -2292,12 +2313,394 @@ document.addEventListener('DOMContentLoaded',()=>{
         </div>
       </div>
     `;
-
     content.appendChild(panel);
+
+    // ====== PANEL MEMBERS DASHBOARD ======
+    const memberPanel = document.createElement('div');
+    memberPanel.className = 'panel';
+    memberPanel.id = 'tab-members';
+    memberPanel.innerHTML = `
+      <!-- STATS OVERVIEW -->
+      <div class="section">
+        <div class="section-head">
+          <span class="section-title">👥 Dashboard Member</span>
+          <span class="section-badge green">REALTIME</span>
+        </div>
+        <div class="section-body">
+          <!-- Stat Cards -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+            <div style="background:var(--bg3);border:1px solid rgba(0,229,255,0.2);border-radius:12px;padding:14px">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:1px;margin-bottom:6px">TOTAL MEMBER</div>
+              <div id="mbr-total" style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--cyan)">0</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:3px">akun terdaftar</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid rgba(0,255,136,0.2);border-radius:12px;padding:14px">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:1px;margin-bottom:6px">AKTIF</div>
+              <div id="mbr-active" style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--green)">0</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:3px">tidak diban</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid rgba(255,61,90,0.2);border-radius:12px;padding:14px">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:1px;margin-bottom:6px">DIBAN</div>
+              <div id="mbr-banned" style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--red)">0</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:3px">akun banned</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid rgba(168,85,247,0.2);border-radius:12px;padding:14px">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:1px;margin-bottom:6px">BARU (7 HARI)</div>
+              <div id="mbr-new" style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--purple)">0</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:3px">member baru</div>
+            </div>
+          </div>
+
+          <!-- Search & Filter -->
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <input id="mbr-search" class="fi" placeholder="🔍 Cari username atau nama..." style="flex:1;margin:0" oninput="window._filterMembers()">
+            <select id="mbr-filter-status" class="fsel" style="width:120px;margin:0" onchange="window._filterMembers()">
+              <option value="all">Semua</option>
+              <option value="active">✅ Aktif</option>
+              <option value="banned">🚫 Banned</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+            <button class="btn-secondary" style="font-size:11px;padding:7px 12px" onclick="window._filterMembers('newest')">🆕 Terbaru</button>
+            <button class="btn-secondary" style="font-size:11px;padding:7px 12px" onclick="window._filterMembers('oldest')">📅 Terlama</button>
+            <button class="btn-secondary" style="font-size:11px;padding:7px 12px" onclick="window._exportMembersCsv()">📥 Export CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Member List -->
+      <div class="section">
+        <div class="section-head">
+          <span class="section-title">📋 Daftar Member</span>
+          <span id="mbr-count-badge" class="section-badge">0 member</span>
+        </div>
+        <div style="padding:12px 16px" id="member-list-container">
+          <div style="text-align:center;padding:32px;color:var(--muted);font-size:12px">
+            <div style="font-size:32px;margin-bottom:8px">👥</div>
+            Memuat data member...
+          </div>
+        </div>
+      </div>
+
+      <!-- Grafik Pertumbuhan Member -->
+      <div class="section">
+        <div class="section-head">
+          <span class="section-title">📈 Pertumbuhan Member</span>
+          <span class="section-badge purple">CHART</span>
+        </div>
+        <div class="section-body">
+          <div id="mbr-growth-chart" style="display:flex;align-items:flex-end;gap:4px;height:80px;padding:4px 0">
+            <div style="text-align:center;color:var(--muted);font-size:11px;width:100%">Belum ada data grafik</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);margin-top:6px" id="mbr-chart-labels"></div>
+        </div>
+      </div>
+
+      <!-- Detail Member Modal (inline) -->
+      <div id="mbr-detail-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px">
+        <div style="background:var(--bg2);border:1px solid rgba(0,229,255,0.25);border-radius:20px;padding:24px 20px;width:100%;max-width:380px;position:relative;max-height:85vh;overflow-y:auto">
+          <button onclick="document.getElementById('mbr-detail-overlay').style.display='none'"
+            style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:28px;height:28px;color:rgba(255,255,255,0.5);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+          <div id="mbr-detail-content">Loading...</div>
+        </div>
+      </div>
+    `;
+    content.appendChild(memberPanel);
   }
 
   /* ============================================================
-     10. PATCH switchTab — extend yang sudah ada
+     MEMBER DASHBOARD — render, filter, detail, export
+     ============================================================ */
+
+  let _mbrSortMode = 'newest';
+
+  function _renderMemberDashboard() {
+    const users = Object.values(_usersCache);
+    const bans = _bansCache;
+
+    // Update stat cards
+    const total = users.length;
+    const banned = users.filter(u => isBanned(u.uid || u.username)).length;
+    const active = total - banned;
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const newMembers = users.filter(u => u.createdAt && new Date(u.createdAt).getTime() > oneWeekAgo).length;
+
+    _setEl('mbr-total', total);
+    _setEl('mbr-active', active);
+    _setEl('mbr-banned', banned);
+    _setEl('mbr-new', newMembers);
+    _setEl('mbr-count-badge', `${total} member`);
+
+    // Render chart pertumbuhan (7 hari terakhir)
+    _renderMemberGrowthChart(users);
+
+    // Render list
+    window._filterMembers(_mbrSortMode);
+  }
+
+  function _setEl(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  function _renderMemberGrowthChart(users) {
+    const chartEl = document.getElementById('mbr-growth-chart');
+    const labelsEl = document.getElementById('mbr-chart-labels');
+    if (!chartEl) return;
+
+    // Group by day for last 7 days
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push({
+        label: d.toLocaleDateString('id-ID', { weekday: 'short' }),
+        date: d.toDateString(),
+        count: 0,
+      });
+    }
+
+    users.forEach(u => {
+      if (!u.createdAt) return;
+      const dStr = new Date(u.createdAt).toDateString();
+      const day = days.find(d => d.date === dStr);
+      if (day) day.count++;
+    });
+
+    const maxCount = Math.max(...days.map(d => d.count), 1);
+
+    chartEl.innerHTML = days.map(d => {
+      const pct = Math.max((d.count / maxCount) * 100, d.count > 0 ? 15 : 4);
+      const color = d.count > 0 ? 'var(--cyan)' : 'rgba(0,229,255,0.15)';
+      return `
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--cyan)">${d.count > 0 ? '+'+d.count : ''}</div>
+          <div style="width:100%;background:rgba(0,229,255,0.08);border-radius:4px 4px 0 0;height:${pct}%;min-height:4px;
+            background-color:${color};transition:height 0.5s ease"></div>
+        </div>`;
+    }).join('');
+
+    if (labelsEl) {
+      labelsEl.innerHTML = days.map(d => `<span>${d.label}</span>`).join('');
+    }
+  }
+
+  window._filterMembers = (mode) => {
+    if (mode && typeof mode === 'string' && ['newest','oldest'].includes(mode)) {
+      _mbrSortMode = mode;
+    }
+    const query = (document.getElementById('mbr-search')?.value || '').toLowerCase();
+    const statusFilter = document.getElementById('mbr-filter-status')?.value || 'all';
+
+    let users = Object.values(_usersCache);
+
+    // Filter by status
+    if (statusFilter === 'active') users = users.filter(u => !isBanned(u.uid || u.username));
+    if (statusFilter === 'banned') users = users.filter(u => isBanned(u.uid || u.username));
+
+    // Filter by search
+    if (query) {
+      users = users.filter(u =>
+        (u.username || '').toLowerCase().includes(query) ||
+        (u.profile?.name || '').toLowerCase().includes(query) ||
+        (u.uid || '').toLowerCase().includes(query)
+      );
+    }
+
+    // Sort
+    users.sort((a, b) => {
+      const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return _mbrSortMode === 'oldest' ? tA - tB : tB - tA;
+    });
+
+    const container = document.getElementById('member-list-container');
+    if (!container) return;
+
+    if (!users.length) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:32px;color:var(--muted)">
+          <div style="font-size:32px;margin-bottom:8px">🔍</div>
+          <div style="font-size:12px">Tidak ada member yang cocok</div>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = users.map(u => {
+      const uid = u.uid || u.username || '?';
+      const name = u.profile?.name || u.username || uid;
+      const avatar = (name[0] || '?').toUpperCase();
+      const banned = isBanned(uid);
+      const joinDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) : '-';
+      const role = u.role || 'user';
+      const banInfo = _bansCache[uid];
+
+      return `
+        <div style="background:var(--bg3);border:1px solid ${banned ? 'rgba(255,61,90,0.2)' : 'var(--border)'};border-radius:12px;padding:13px;margin-bottom:8px;border-left:3px solid ${banned ? 'var(--red)' : 'var(--cyan)'}">
+          <div style="display:flex;align-items:center;gap:10px">
+            <!-- Avatar -->
+            <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,${banned?'#7f1d1d,#450a0a':'#0c4a6e,#1e3a5f'});
+              border:1px solid ${banned?'rgba(255,61,90,0.3)':'rgba(0,229,255,0.3)'};
+              display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:${banned?'var(--red)':'var(--cyan)'};flex-shrink:0">
+              ${avatar}
+            </div>
+            <!-- Info -->
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff">${_esc(name)}</div>
+                ${role === 'admin' ? '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:rgba(0,229,255,0.15);border:1px solid var(--cyan);color:var(--cyan);font-family:Space Mono,monospace">ADMIN</span>' : ''}
+                <span style="font-size:8px;padding:1px 6px;border-radius:3px;background:${banned?'var(--red-dim)':'var(--green-dim)'};border:1px solid ${banned?'var(--red)':'var(--green)'};color:${banned?'var(--red)':'var(--green)'};font-family:Space Mono,monospace">${banned?'🚫 BANNED':'✅ AKTIF'}</span>
+              </div>
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px">@${_esc(uid)}</div>
+              <div style="font-size:10px;color:var(--muted2);margin-top:2px">📅 Bergabung ${joinDate}</div>
+              ${banned && banInfo ? `<div style="font-size:10px;color:var(--red);margin-top:2px">🚫 ${_esc(banInfo.reason || 'Tidak ada alasan')}</div>` : ''}
+            </div>
+            <!-- Action Dots -->
+            <button onclick="window._showMemberDetail('${_esc(uid)}')"
+              style="width:32px;height:32px;border-radius:8px;background:var(--bg4);border:1px solid var(--border2);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all 0.2s"
+              onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'"
+              onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted2)'">ℹ️</button>
+          </div>
+          <!-- Quick Actions -->
+          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+            ${!banned
+              ? `<button class="btn-danger" style="font-size:10px;padding:5px 10px" onclick="window._adminQuickBan('${_esc(uid)}','${_esc(u.username || uid)}')">🚫 Ban</button>`
+              : `<button class="btn-green" style="font-size:10px;padding:5px 10px" onclick="window._adminUnban('${_esc(uid)}')">✅ Unban</button>`
+            }
+            <button class="btn-secondary" style="font-size:10px;padding:5px 10px" onclick="window._showMemberDetail('${_esc(uid)}')">📋 Detail</button>
+            <button class="btn-secondary" style="font-size:10px;padding:5px 10px" onclick="window._changeUserRole('${_esc(uid)}','${role === 'admin'?'user':'admin'}')">👑 ${role === 'admin'?'Cabut Admin':'Jadikan Admin'}</button>
+          </div>
+        </div>`;
+    }).join('');
+  };
+
+  window._showMemberDetail = (uid) => {
+    const u = _usersCache[uid];
+    const overlay = document.getElementById('mbr-detail-overlay');
+    const content = document.getElementById('mbr-detail-content');
+    if (!overlay || !content) return;
+
+    if (!u) {
+      content.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px">User tidak ditemukan</div>';
+      overlay.style.display = 'flex';
+      return;
+    }
+
+    const uid2 = u.uid || u.username || '?';
+    const name = u.profile?.name || u.username || uid2;
+    const avatar = (name[0] || '?').toUpperCase();
+    const banned = isBanned(uid2);
+    const banInfo = _bansCache[uid2];
+    const joinDate = u.createdAt ? new Date(u.createdAt).toLocaleString('id-ID') : '-';
+    const userOrders = _rtOrders.filter(o => o.uid === uid2 || o.wa === uid2);
+
+    content.innerHTML = `
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,${banned?'#7f1d1d,#450a0a':'#1e3a5f,#0c4a6e'});
+          border:2px solid ${banned?'var(--red)':'var(--cyan)'};
+          display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:${banned?'var(--red)':'var(--cyan)'};margin:0 auto 10px">
+          ${avatar}
+        </div>
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#fff">${_esc(name)}</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px">@${_esc(uid2)}</div>
+        <div style="margin-top:8px">
+          <span style="font-size:9px;padding:2px 8px;border-radius:4px;background:${banned?'var(--red-dim)':'var(--green-dim)'};border:1px solid ${banned?'var(--red)':'var(--green)'};color:${banned?'var(--red)':'var(--green)'};font-family:'Space Mono',monospace">${banned?'🚫 BANNED':'✅ AKTIF'}</span>
+        </div>
+      </div>
+
+      <!-- Detail Rows -->
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">
+        ${[
+          ['Role', u.role || 'user'],
+          ['Bergabung', joinDate],
+          ['Bio', u.profile?.bio || '-'],
+          ['Total Order', userOrders.length + ' order'],
+          ['Order Lunas', userOrders.filter(o=>o.lunas||o.status==='lunas').length + ' order'],
+        ].map(([label, val]) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)">
+            <span style="font-size:11px;color:var(--muted2)">${label}</span>
+            <span style="font-size:12px;color:var(--text);font-weight:500;text-align:right;max-width:180px;overflow:hidden;text-overflow:ellipsis">${_esc(String(val))}</span>
+          </div>`).join('')}
+      </div>
+
+      ${banned && banInfo ? `
+        <div style="background:var(--red-dim);border:1px solid var(--red);border-radius:10px;padding:12px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:6px">🚫 Info Ban</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);line-height:1.6">
+            <strong style="color:#fff">Alasan:</strong> ${_esc(banInfo.reason)}<br>
+            <strong style="color:#fff">Tipe:</strong> ${banInfo.type === 'permanent' ? 'Permanen' : 'Sementara'}<br>
+            ${banInfo.expireAt ? `<strong style="color:#fff">Expire:</strong> ${new Date(banInfo.expireAt).toLocaleString('id-ID')}` : ''}
+          </div>
+        </div>` : ''}
+
+      <!-- Recent Orders -->
+      ${userOrders.length > 0 ? `
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">ORDER TERBARU</div>
+        ${userOrders.slice(-3).reverse().map(o => `
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:11px;color:#fff">${_esc(o.produk || o.productName || '-')}</div>
+              <span style="font-size:9px;padding:1px 6px;border-radius:3px;background:${o.lunas?'var(--green-dim)':'var(--orange-dim)'};border:1px solid ${o.lunas?'var(--green)':'var(--orange)'};color:${o.lunas?'var(--green)':'var(--orange)'}">
+                ${o.lunas?'LUNAS':'MENUNGGU'}
+              </span>
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px">${_esc(o.harga || o.price || '-')} · ${_fmtTime(o.waktu || o.createdAt)}</div>
+          </div>`).join('')}` : `
+        <div style="text-align:center;padding:14px;background:var(--bg3);border-radius:10px;font-size:11px;color:var(--muted)">Belum ada riwayat order</div>`}
+
+      <!-- Action Buttons -->
+      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+        ${!banned
+          ? `<button class="btn-danger" style="flex:1;font-size:12px" onclick="window._adminQuickBan('${_esc(uid2)}','${_esc(u.username || uid2)}');document.getElementById('mbr-detail-overlay').style.display='none'">🚫 Ban User</button>`
+          : `<button class="btn-green" style="flex:1;font-size:12px" onclick="window._adminUnban('${_esc(uid2)}');document.getElementById('mbr-detail-overlay').style.display='none'">✅ Unban</button>`
+        }
+        <button class="btn-secondary" style="flex:1;font-size:12px" onclick="document.getElementById('mbr-detail-overlay').style.display='none'">Tutup</button>
+      </div>
+    `;
+
+    overlay.style.display = 'flex';
+  };
+
+  window._changeUserRole = async (uid, newRole) => {
+    if (!confirm(`Ubah role ${uid} menjadi ${newRole}?`)) return;
+    const user = _usersCache[uid];
+    if (!user) return _toast('User tidak ditemukan!', 'error');
+    user.role = newRole;
+    const ok = await _set(`store/users/${uid}`, user);
+    if (ok) {
+      _toast(`Role ${uid} diubah ke ${newRole}!`, 'success');
+      _renderMemberDashboard();
+    } else {
+      _toast('Gagal ubah role!', 'error');
+    }
+  };
+
+  window._exportMembersCsv = () => {
+    const users = Object.values(_usersCache);
+    if (!users.length) return _toast('Tidak ada data member!', 'error');
+    const headers = ['UID','Username','Nama','Role','Status','Bergabung'];
+    const rows = users.map(u => {
+      const uid = u.uid || u.username || '';
+      return [
+        uid,
+        u.username || '',
+        u.profile?.name || '',
+        u.role || 'user',
+        isBanned(uid) ? 'Banned' : 'Aktif',
+        u.createdAt ? new Date(u.createdAt).toLocaleString('id-ID') : '-',
+      ];
+    });
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `members_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+    _toast('CSV member berhasil didownload!', 'success');
+  };
+
+  /* ============================================================
+     PATCH switchTab — handle members tab
      ============================================================ */
 
   function _patchSwitchTab() {
@@ -2311,6 +2714,9 @@ document.addEventListener('DOMContentLoaded',()=>{
       }
       if (name === 'gchat-admin') {
         _renderAdminChat(_chatMsgs);
+      }
+      if (name === 'members') {
+        _renderMemberDashboard();
       }
       if (name === 'bans') {
         renderBanList();
