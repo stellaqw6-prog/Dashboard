@@ -30,7 +30,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .login-title{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:#fff;letter-spacing:-0.5px;line-height:1.1;}
 .login-sub{font-family:'Space Mono',monospace;font-size:10px;color:var(--cyan);letter-spacing:1.5px;margin-top:4px;opacity:0.8;}
 .l-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;display:block;margin-bottom:10px;}
-.l-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:15px 18px;color:var(--text);font-family:'Space Mono',monospace;font-size:20px;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:24px;letter-spacing:8px;}
+.l-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:15px 18px;color:var(--text);font-family:'Space Mono',monospace;font-size:20px;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:24px;letter-spacing:6px;text-align:center;-webkit-text-security:disc;}
 .l-input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,0.1);}
 .btn-login{width:100%;padding:16px;border-radius:12px;background:var(--cyan);color:#000;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:2px;border:none;cursor:pointer;transition:all .2s;}
 .btn-login:hover{box-shadow:0 0 24px rgba(0,229,255,0.4);transform:translateY(-1px);}
@@ -302,7 +302,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
       </div>
     </div>
     <label class="l-label">Password</label>
-    <input class="l-input" type="password" id="pw-input" placeholder="••••••" autocomplete="current-password" inputmode="numeric" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="l-input" type="tel" id="pw-input" placeholder="123456" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*" onkeydown="if(event.key==='Enter')doLogin()" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
     <button class="btn-login" onclick="doLogin()">MASUK →</button>
     <div class="login-err" id="login-err">❌ Password salah! Coba lagi.</div>
     <div class="login-footer">SECURE ACCESS · v3.0 PREMIUM</div>
@@ -964,7 +964,7 @@ function esc(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
    LOGIN
    ==================================================== */
 function doLogin(){
-  const pw=document.getElementById('pw-input').value;
+  const pw=document.getElementById('pw-input').value.trim();
   if(pw===PASS){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
@@ -1543,6 +1543,954 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('t-accent-hex')?.addEventListener('input',function(){if(/^#[0-9a-fA-F]{6}$/.test(this.value))document.getElementById('t-accent').value=this.value;});
   document.getElementById('t-accent2-hex')?.addEventListener('input',function(){if(/^#[0-9a-fA-F]{6}$/.test(this.value))document.getElementById('t-accent2').value=this.value;});
 });
+</script>
+
+<script>
+/**
+ * ============================================================
+ *  FIREBASE ADMIN ADDON — firebase-admin-addon.js
+ *  TEPAT SEBELUM </body> di admin_premium-2.html
+ * ============================================================
+ *
+ *  FITUR:
+ *  1. Firebase Realtime DB listeners (onValue) — no polling
+ *  2. Ban System (permanen & sementara) — realtime broadcast
+ *  3. Order System — realtime onValue, fix bug hilang di admin
+ *  4. Global Chat — realtime listener + hapus pesan + announce
+ *  5. User Management — list users dari Firebase
+ *  6. Dashboard stats — dari Firebase bukan hardcode
+ *  7. Products sync — admin push → store otomatis update
+ *  8. Unsubscribe semua listener saat logout (no memory leak)
+ *
+ *  SYARAT:
+ *  - FIREBASE_URL sudah ada di admin_premium-2.html (sudah ada ✓)
+ *  - FIREBASE_TOKEN sudah ada (opsional, isi jika pakai rules auth)
+ *  - Tidak mengubah HTML/CSS yang sudah ada
+ * ============================================================
+ */
+
+/* ============================================================
+   0. WAIT FOR DOM
+   ============================================================ */
+(function () {
+  'use strict';
+
+  // Tunggu sampai halaman load & variabel global tersedia
+  const _ready = (fn) => {
+    if (document.readyState !== 'loading') fn();
+    else document.addEventListener('DOMContentLoaded', fn);
+  };
+
+  /* ============================================================
+     1. FIREBASE SSE REALTIME LISTENER
+     Firebase Realtime DB mendukung SSE (EventSource) tanpa SDK.
+     Ini jauh lebih efisien dari polling setInterval.
+     ============================================================ */
+
+  // Registry semua active SSE connections → untuk unsubscribe
+  const _listeners = {};
+
+  /**
+   * Buat realtime listener ke path Firebase RTDB via SSE.
+   * @param {string} path  — path setelah /store/, misal "orders"
+   * @param {function} cb  — dipanggil setiap ada data baru: cb(data)
+   * @returns {function}   — unsubscribe function
+   */
+  function rtListen(path, cb) {
+    const key = path;
+    // Hapus listener lama jika ada
+    if (_listeners[key]) {
+      _listeners[key].close();
+      delete _listeners[key];
+    }
+
+    const base = window.FIREBASE_URL || '';
+    const token = window.FIREBASE_TOKEN || '';
+    const url = `${base}/store/${path}.json${token ? '?auth=' + token : ''}`;  // SSE stream
+
+    const es = new EventSource(url);
+
+    es.addEventListener('put', (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        cb(payload.data);
+      } catch (_) {}
+    });
+
+    es.addEventListener('patch', (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        // patch hanya bagian, tetap trigger refresh
+        cb(null, 'patch', payload.data);
+      } catch (_) {}
+    });
+
+    es.onerror = () => {
+      // Auto-reconnect bawaan EventSource, tidak perlu manual
+    };
+
+    _listeners[key] = es;
+
+    // Return unsubscribe
+    return () => {
+      es.close();
+      delete _listeners[key];
+    };
+  }
+
+  /**
+   * Unsubscribe SEMUA listener — dipanggil saat logout
+   */
+  function rtUnsubscribeAll() {
+    Object.values(_listeners).forEach((es) => es.close());
+    Object.keys(_listeners).forEach((k) => delete _listeners[k]);
+  }
+
+  /* ============================================================
+     2. FIREBASE HELPERS (extend dari yang sudah ada)
+     Gunakan FIREBASE_URL & FIREBASE_TOKEN global dari admin.html
+     ============================================================ */
+
+  function _url(path) {
+    const base = window.FIREBASE_URL || '';
+    const tok = window.FIREBASE_TOKEN || '';
+    return `${base}/${path}.json${tok ? '?auth=' + tok : ''}`;
+  }
+  function _urlQ(path, q) {
+    const base = window.FIREBASE_URL || '';
+    const tok = window.FIREBASE_TOKEN || '';
+    return `${base}/${path}.json?${tok ? 'auth=' + tok + '&' : ''}${q}`;
+  }
+
+  async function _get(path) {
+    try {
+      const r = await fetch(_url(path));
+      if (!r.ok) return null;
+      return await r.json();
+    } catch { return null; }
+  }
+
+  async function _set(path, val) {
+    try {
+      const r = await fetch(_url(path), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(val),
+      });
+      return r.ok;
+    } catch { return false; }
+  }
+
+  async function _push(path, val) {
+    try {
+      const r = await fetch(_url(path), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(val),
+      });
+      if (!r.ok) return null;
+      const d = await r.json();
+      return d.name; // Firebase push key
+    } catch { return null; }
+  }
+
+  async function _delete(path) {
+    try {
+      const r = await fetch(_url(path), { method: 'DELETE' });
+      return r.ok;
+    } catch { return false; }
+  }
+
+  async function _update(path, val) {
+    try {
+      const r = await fetch(_url(path), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(val),
+      });
+      return r.ok;
+    } catch { return false; }
+  }
+
+  function _norm(data) {
+    if (!data) return [];
+    if (Array.isArray(data)) return data.filter(Boolean);
+    if (typeof data === 'object') return Object.entries(data).map(([k, v]) => ({ _key: k, ...v }));
+    return [];
+  }
+
+  function _esc(t) {
+    return String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function _fmtTime(iso) {
+    if (!iso) return '-';
+    try {
+      return new Date(iso).toLocaleString('id-ID', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    } catch { return iso; }
+  }
+
+  function _toast(msg, type = 'loading') {
+    if (typeof window.showToast === 'function') window.showToast(msg, type);
+  }
+
+  /* ============================================================
+     3. BAN SYSTEM
+     Path: /bans/{uid}
+     Struktur: { uid, username, reason, type: "permanent"|"temp",
+                  expireAt: null|ISO, bannedAt, bannedBy }
+     ============================================================ */
+
+  let _banUnsub = null;
+
+  // Cache bans untuk cek cepat
+  const _bansCache = {};
+
+  function initBanSystem() {
+    // FIX: path 'bans' → /store/bans, konsisten dengan _set('store/bans/{uid}')
+    _banUnsub = rtListen('bans', (data) => {
+      Object.keys(_bansCache).forEach((k) => delete _bansCache[k]);
+      if (data && typeof data === 'object') {
+        Object.entries(data).forEach(([uid, ban]) => {
+          _bansCache[uid] = ban;
+        });
+      }
+      renderBanList();
+    });
+  }
+
+  function isBanned(uid) {
+    const ban = _bansCache[uid];
+    if (!ban) return false;
+    if (ban.type === 'permanent') return true;
+    if (ban.type === 'temp' && ban.expireAt) {
+      return new Date(ban.expireAt) > new Date();
+    }
+    return false;
+  }
+
+  async function banUser(uid, username, reason, type, expireAt = null) {
+    if (!uid) return _toast('UID tidak boleh kosong!', 'error');
+    const ban = {
+      uid,
+      username: username || uid,
+      reason: reason || 'Pelanggaran aturan',
+      type: type || 'permanent',
+      expireAt: expireAt || null,
+      bannedAt: new Date().toISOString(),
+      bannedBy: 'admin',
+    };
+    const ok = await _set(`store/bans/${uid}`, ban);
+    if (ok) {
+      _toast(`${username} berhasil diban!`, 'success');
+      // Broadcast ke user agar auto-logout via listener di store
+      await _set(`store/ban-broadcast/${uid}`, { banned: true, at: Date.now() });
+    } else {
+      _toast('Gagal ban user!', 'error');
+    }
+    return ok;
+  }
+
+  async function unbanUser(uid) {
+    const [a, b] = await Promise.all([
+      _delete(`store/bans/${uid}`),
+      _delete(`store/ban-broadcast/${uid}`),
+    ]);
+    if (a || b) _toast('User di-unban!', 'success');
+    renderBanList();
+  }
+
+  function renderBanList() {
+    const container = document.getElementById('ban-list-admin');
+    if (!container) return;
+
+    const bans = Object.values(_bansCache);
+    if (!bans.length) {
+      container.innerHTML =
+        '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px;">Tidak ada user yang diban</div>';
+      return;
+    }
+
+    container.innerHTML = bans.map((ban) => {
+      const stillActive = isBanned(ban.uid);
+      const expTxt = ban.type === 'temp' && ban.expireAt
+        ? `Expire: ${_fmtTime(ban.expireAt)}`
+        : 'Permanen';
+      return `
+        <div class="order-card ${stillActive ? 'menunggu' : 'expired'}" style="margin-bottom:8px">
+          <div class="order-card-head">
+            <div>
+              <div class="order-id">🚫 ${_esc(ban.username)}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">UID: ${_esc(ban.uid)}</div>
+            </div>
+            <div class="order-status ${stillActive ? 'menunggu' : 'expired'}">
+              ${stillActive ? 'AKTIF' : 'EXPIRED'}
+            </div>
+          </div>
+          <div class="order-row"><span class="order-label">Alasan</span><span class="order-val">${_esc(ban.reason)}</span></div>
+          <div class="order-row"><span class="order-label">Tipe</span><span class="order-val">${_esc(expTxt)}</span></div>
+          <div class="order-row"><span class="order-label">Diban</span><span class="order-val">${_fmtTime(ban.bannedAt)}</span></div>
+          <div class="order-actions">
+            <button class="btn-green" style="font-size:11px;padding:7px 14px" onclick="window._adminUnban('${_esc(ban.uid)}')">✅ Unban</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Expose ke HTML
+  window._adminUnban = unbanUser;
+
+  async function submitBanForm() {
+    const uid = (document.getElementById('ban-uid-input')?.value || '').trim();
+    const username = (document.getElementById('ban-username-input')?.value || '').trim();
+    const reason = (document.getElementById('ban-reason-input')?.value || '').trim();
+    const type = document.getElementById('ban-type-select')?.value || 'permanent';
+    const expireVal = (document.getElementById('ban-expire-input')?.value || '').trim();
+
+    if (!uid) return _toast('UID wajib diisi!', 'error');
+
+    let expireAt = null;
+    if (type === 'temp') {
+      if (!expireVal) return _toast('Pilih tanggal expire!', 'error');
+      expireAt = new Date(expireVal).toISOString();
+    }
+
+    await banUser(uid, username, reason, type, expireAt);
+
+    // Reset form
+    ['ban-uid-input', 'ban-username-input', 'ban-reason-input', 'ban-expire-input']
+      .forEach((id) => { const el = document.getElementById(id); if (el) el.value = ''; });
+  }
+
+  window._adminBanSubmit = submitBanForm;
+
+  /* ============================================================
+     4. ORDER SYSTEM — REALTIME + FIX BUG
+     Path: /store/orders (array format yang sudah ada)
+     Listener SSE biar admin otomatis terima order baru tanpa refresh
+     ============================================================ */
+
+  let _orderUnsub = null;
+  let _rtOrders = [];
+
+  function initOrderRealtime() {
+    if (_orderUnsub) _orderUnsub();
+
+    // FIX: path harus 'store-orders' bukan 'orders'
+    // rtListen prefix-nya /store/, jadi URL = firebase.../store/store-orders.json
+    // Ini konsisten dengan dbGet('store-orders') di store.html
+    _orderUnsub = rtListen('store-orders', (data) => {
+      _rtOrders = _norm(data);
+      _refreshOrderBadge();
+      // Jika tab orders sedang aktif, re-render
+      const tab = document.getElementById('tab-orders');
+      if (tab && tab.classList.contains('active')) {
+        _renderRtOrders();
+      }
+      // Update dashboard jika terbuka
+      _updateDashboardStats();
+    });
+  }
+
+  function _refreshOrderBadge() {
+    const pending = _rtOrders.filter((o) => o && o.status === 'menunggu').length;
+    const badge = document.getElementById('orders-badge');
+    if (badge) {
+      badge.textContent = pending;
+      badge.style.display = pending > 0 ? 'inline' : 'none';
+    }
+    const totalBadge = document.getElementById('orders-total-badge');
+    if (totalBadge) {
+      totalBadge.textContent = `${_rtOrders.length} order · ${pending} menunggu`;
+    }
+  }
+
+  function _renderRtOrders(filter = 'semua') {
+    const list = document.getElementById('orders-list');
+    if (!list) return;
+
+    let orders = [..._rtOrders].reverse();
+    if (filter === 'menunggu') orders = orders.filter((o) => o.status === 'menunggu');
+    else if (filter === 'lunas') orders = orders.filter((o) => o.status === 'lunas' || o.lunas);
+    else if (filter === 'expired') orders = orders.filter((o) => o.status === 'expired');
+
+    if (!orders.length) {
+      list.innerHTML =
+        '<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px">Tidak ada order</div>';
+      return;
+    }
+
+    list.innerHTML = orders.map((o, i) => {
+      const status = o.lunas ? 'lunas' : (o.status || 'menunggu');
+      // Cari real index di _rtOrders
+      const realIdx = _rtOrders.findIndex(
+        (x) => x && (x.id === o.id || (x._key && x._key === o._key))
+      );
+      return `
+        <div class="order-card ${status}">
+          <div class="order-card-head">
+            <div>
+              <div class="order-id">${_esc(o.id || o._key || 'N/A')}</div>
+              <div style="font-size:10px;color:var(--muted)">${_fmtTime(o.waktu || o.createdAt)}</div>
+            </div>
+            <div class="order-status ${status}">${status.toUpperCase()}</div>
+          </div>
+          <div class="order-row"><span class="order-label">Produk</span><span class="order-val">${_esc(o.produk || o.productName || '-')}</span></div>
+          <div class="order-row"><span class="order-label">Harga</span><span class="order-val">${_esc(o.harga || o.price || '-')}</span></div>
+          <div class="order-row"><span class="order-label">WA</span><span class="order-val">${_esc(o.wa || o.phone || '-')}</span></div>
+          ${o.varian ? `<div class="order-row"><span class="order-label">Varian</span><span class="order-val">${_esc(o.varian)}</span></div>` : ''}
+          <div class="order-actions">
+            ${!o.lunas ? `<button class="btn-green" style="font-size:11px;padding:7px 12px" onclick="window._rtConfirmOrder(${realIdx})">✅ Konfirmasi Lunas</button>` : ''}
+            <button class="btn-secondary" style="font-size:11px;padding:7px 12px" onclick="window._rtExpireOrder(${realIdx})">⏱ Expired</button>
+            <button class="btn-danger" style="font-size:11px;padding:7px 12px" onclick="window._rtDeleteOrder(${realIdx})">🗑 Hapus</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window._rtOrdersRender = _renderRtOrders;
+
+  window._rtConfirmOrder = async (idx) => {
+    if (!_rtOrders[idx]) return;
+    const orders = [..._rtOrders];
+    orders[idx] = { ...orders[idx], lunas: true, status: 'lunas', confirmedAt: new Date().toISOString() };
+    // Filter out _key meta field sebelum save
+    const clean = orders.map(({ _key, ...rest }) => rest);
+    await _safeSetOrders(clean);
+    _toast('Order dikonfirmasi lunas!', 'success');
+  };
+
+  window._rtExpireOrder = async (idx) => {
+    if (!_rtOrders[idx]) return;
+    const orders = [..._rtOrders];
+    orders[idx] = { ...orders[idx], status: 'expired' };
+    const clean = orders.map(({ _key, ...rest }) => rest);
+    await _safeSetOrders(clean);
+    _toast('Order ditandai expired!', 'success');
+  };
+
+  window._rtDeleteOrder = async (idx) => {
+    if (typeof window.openConfirm === 'function') {
+      window.openConfirm('Hapus order ini?', 'Data order akan dihapus permanen.', async () => {
+        const orders = _rtOrders.filter((_, i) => i !== idx);
+        const clean = orders.map(({ _key, ...rest }) => rest);
+        await _safeSetOrders(clean);
+        _toast('Order dihapus!', 'success');
+      });
+    } else {
+      if (!confirm('Hapus order ini?')) return;
+      const orders = _rtOrders.filter((_, i) => i !== idx);
+      const clean = orders.map(({ _key, ...rest }) => rest);
+      await _safeSetOrders(clean);
+    }
+  };
+
+  async function _safeSetOrders(orders) {
+    // FIX: store membaca dari /store/store-orders melalui dbGet('store-orders')
+    // _set('store/orders') akan tulis ke /store/orders (BEDA path!)
+    // Harus tulis ke /store/store-orders agar konsisten dengan store.html
+    return await _set('store/store-orders', orders);
+  }
+
+  /* ============================================================
+     5. GLOBAL CHAT REALTIME — admin panel
+     Path: /store/store-gchat (path lama yang sudah ada)
+     ============================================================ */
+
+  let _chatUnsub = null;
+  let _chatMsgs = [];
+
+  function initAdminChatRealtime() {
+    if (_chatUnsub) _chatUnsub();
+
+    // Path 'store-gchat' → URL = /store/store-gchat, konsisten dengan dbGet('store-gchat')
+    _chatUnsub = rtListen('store-gchat', (data) => {
+      _chatMsgs = _norm(data);
+      // Re-render hanya jika tab gchat aktif
+      const tab = document.getElementById('tab-gchat-admin');
+      if (tab && tab.classList.contains('active')) {
+        _renderAdminChat(_chatMsgs);
+      }
+    });
+  }
+
+  function _renderAdminChat(msgs) {
+    const container = document.getElementById('gchat-admin-list');
+    if (!container) return;
+
+    if (!msgs.length) {
+      container.innerHTML =
+        '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">Belum ada pesan</div>';
+      return;
+    }
+
+    container.innerHTML = [...msgs].reverse().map((m, revIdx) => {
+      const realIdx = msgs.length - 1 - revIdx;
+      if (m.type === 'system') {
+        return `<div style="text-align:center;font-size:10px;color:var(--muted);padding:4px 0">📢 ${_esc(m.text)}</div>`;
+      }
+      const t = _fmtTime(m.time || m.createdAt);
+      const av = (m.nick || m.name || 'U')[0].toUpperCase();
+      const uid = m.uid || m.nick || '';
+      const banned = isBanned(uid);
+      return `
+        <div class="gchat-admin-msg">
+          <div class="gchat-admin-av">${av}</div>
+          <div class="gchat-admin-body">
+            <div class="gchat-admin-head">
+              <span class="gchat-admin-nick">${_esc(m.nick || m.name || 'User')}
+                ${banned ? '<span style="color:var(--red);font-size:9px">🚫BANNED</span>' : ''}
+              </span>
+              <span class="gchat-admin-time">${t}</span>
+            </div>
+            ${m.type === 'image'
+              ? `<img src="${_esc(m.fileUrl || '')}" style="max-width:120px;border-radius:6px;margin:4px 0">`
+              : `<div class="gchat-admin-text">${_esc(m.text || m.message || '')}</div>`
+            }
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              <button class="btn-del-msg" onclick="window._adminDeleteChat(${realIdx})">🗑 Hapus</button>
+              ${uid && !banned
+                ? `<button class="btn-del-msg" style="background:rgba(255,165,0,.1);border-color:var(--orange);color:var(--orange)" onclick="window._adminBanFromChat('${_esc(uid)}','${_esc(m.nick || m.name || uid)}')">🚫 Ban User</button>`
+                : ''}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window._adminDeleteChat = async (idx) => {
+    const msgs = [..._chatMsgs];
+    msgs.splice(idx, 1);
+    const clean = msgs.map(({ _key, ...rest }) => rest);
+    // FIX: path harus store/store-gchat (konsisten dgn dbSet/dbGet 'store-gchat')
+    const ok = await _set('store/store-gchat', clean);
+    if (ok) _toast('Pesan dihapus!', 'success');
+    else _toast('Gagal hapus pesan!', 'error');
+  };
+
+  window._adminBanFromChat = async (uid, username) => {
+    const reason = prompt(`Alasan ban ${username}:`, 'Spam / Perilaku tidak pantas di chat');
+    if (reason === null) return;
+    const typeOpt = confirm('Ban permanen? OK = Permanen, Cancel = Sementara 24jam');
+    let type = 'permanent', expireAt = null;
+    if (!typeOpt) {
+      type = 'temp';
+      expireAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    }
+    await banUser(uid, username, reason, type, expireAt);
+    // Hapus pesan chat dari user yang diban
+    const cleaned = _chatMsgs.filter(
+      (m) => (m.uid || m.nick) !== uid
+    ).map(({ _key, ...rest }) => rest);
+    // FIX: path konsisten dengan dbGet/dbSet 'store-gchat'
+    await _set('store/store-gchat', cleaned);
+    _toast(`${username} diban dan semua chat dihapus!`, 'success');
+  };
+
+  /* ============================================================
+     6. PRODUCTS SYNC — admin push, store auto-update via SSE
+     Path: /store/store-produk (path yang sudah ada)
+     ============================================================ */
+
+  let _prodUnsub = null;
+
+  function initProductsRealtime() {
+    if (_prodUnsub) _prodUnsub();
+    _prodUnsub = rtListen('store-produk', (data) => {
+      const prods = _norm(data);
+      // Update dashboard count
+      const el = document.getElementById('qs-products');
+      if (el) el.textContent = prods.length;
+      // Update cleanup count jika ada
+      const cpEl = document.getElementById('cleanup-products-count');
+      if (cpEl) cpEl.textContent = prods.length + ' produk';
+    });
+  }
+
+  /* ============================================================
+     7. USER MANAGEMENT
+     Path: /store/users
+     Dibuat saat user pertama kali menyimpan profil dari store.
+     Admin bisa lihat & ban dari sini.
+     ============================================================ */
+
+  let _userUnsub = null;
+  let _usersCache = {};
+
+  function initUserManagement() {
+    if (_userUnsub) _userUnsub();
+    // Path 'users' → /store/users, konsisten dengan _get('store/users/{uid}')
+    _userUnsub = rtListen('users', (data) => {
+      _usersCache = (data && typeof data === 'object') ? data : {};
+      const count = Object.keys(_usersCache).length;
+      const el = document.getElementById('qs-users');
+      if (el) el.textContent = count;
+      renderUserList();
+    });
+  }
+
+  function renderUserList() {
+    const container = document.getElementById('user-list-admin');
+    if (!container) return;
+
+    const users = Object.values(_usersCache);
+    if (!users.length) {
+      container.innerHTML =
+        '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">Belum ada user terdaftar</div>';
+      return;
+    }
+
+    container.innerHTML = users.map((u) => {
+      const uid = u.uid || u.username || '?';
+      const banned = isBanned(uid);
+      return `
+        <div class="order-card" style="margin-bottom:8px">
+          <div class="order-card-head">
+            <div>
+              <div class="order-id">👤 ${_esc(u.username || u.profile?.name || uid)}</div>
+              <div style="font-size:10px;color:var(--muted)">UID: ${_esc(uid)}</div>
+            </div>
+            <div class="order-status ${banned ? 'expired' : 'lunas'}">${banned ? '🚫 BANNED' : '✅ AKTIF'}</div>
+          </div>
+          <div class="order-row"><span class="order-label">Role</span><span class="order-val">${_esc(u.role || 'user')}</span></div>
+          <div class="order-row"><span class="order-label">Bergabung</span><span class="order-val">${_fmtTime(u.createdAt)}</span></div>
+          <div class="order-actions">
+            ${!banned
+              ? `<button class="btn-danger" style="font-size:11px;padding:7px 12px"
+                   onclick="window._adminQuickBan('${_esc(uid)}','${_esc(u.username || uid)}')">🚫 Ban</button>`
+              : `<button class="btn-green" style="font-size:11px;padding:7px 12px"
+                   onclick="window._adminUnban('${_esc(uid)}')">✅ Unban</button>`
+            }
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window._adminQuickBan = async (uid, username) => {
+    const reason = prompt(`Alasan ban ${username}:`, 'Pelanggaran aturan');
+    if (reason === null) return;
+    await banUser(uid, username, reason, 'permanent');
+  };
+
+  /* ============================================================
+     8. DASHBOARD STATS REALTIME
+     ============================================================ */
+
+  function _updateDashboardStats() {
+    const qsOrders = document.getElementById('qs-orders');
+    if (qsOrders) qsOrders.textContent = _rtOrders.length;
+
+    const pending = _rtOrders.filter((o) => o && o.status === 'menunggu').length;
+    // Update dashboard quick stats order card jika ada
+    const dashOrders = document.getElementById('dashboard-orders');
+    if (dashOrders) {
+      const recent = [..._rtOrders].reverse().slice(0, 5);
+      if (recent.length) {
+        dashOrders.innerHTML = recent.map((o) => {
+          const status = o.lunas ? 'lunas' : (o.status || 'menunggu');
+          return `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-size:11px;color:var(--text)">${_esc(o.produk || o.productName || '-')}</div>
+                <div style="font-size:9px;color:var(--muted)">${_fmtTime(o.waktu || o.createdAt)}</div>
+              </div>
+              <div class="order-status ${status}" style="font-size:9px">${status.toUpperCase()}</div>
+            </div>`;
+        }).join('');
+      }
+    }
+  }
+
+  /* ============================================================
+     9. INJECT UI — Ban Management Tab HTML
+     Di-inject ke DOM setelah page load jika elemen belum ada
+     ============================================================ */
+
+  function _injectBanUI() {
+    // Cek apakah sudah ada ban tab
+    if (document.getElementById('tab-bans')) return;
+
+    // Tambah tab button
+    const tabsNav = document.querySelector('.tabs-nav');
+    if (tabsNav) {
+      const btn = document.createElement('button');
+      btn.className = 'tnav';
+      btn.id = 'tab-btn-bans';
+      btn.innerHTML = '🚫 Ban System';
+      btn.onclick = function () {
+        if (typeof window.switchTab === 'function') {
+          window.switchTab('bans', btn);
+        }
+        renderBanList();
+        renderUserList();
+      };
+      tabsNav.appendChild(btn);
+    }
+
+    // Tambah panel konten
+    const app = document.getElementById('app');
+    if (!app) return;
+    const content = app.querySelector('.content') || app;
+
+    const panel = document.createElement('div');
+    panel.className = 'panel';
+    panel.id = 'tab-bans';
+    panel.innerHTML = `
+      <div class="section">
+        <div class="section-head">
+          <span class="section-title">🚫 Ban System</span>
+          <span class="section-badge red">REALTIME</span>
+        </div>
+        <div class="section-body" style="padding:16px">
+
+          <!-- Form Ban Baru -->
+          <div style="margin-bottom:20px">
+            <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--cyan);letter-spacing:1px;margin-bottom:12px">BAN USER BARU</div>
+            <div class="fg" style="margin-bottom:10px">
+              <label class="fl">UID / Username</label>
+              <input class="fi" id="ban-uid-input" placeholder="Username atau UID user">
+            </div>
+            <div class="fg" style="margin-bottom:10px">
+              <label class="fl">Nama Tampil (opsional)</label>
+              <input class="fi" id="ban-username-input" placeholder="Nama user untuk referensi">
+            </div>
+            <div class="fg" style="margin-bottom:10px">
+              <label class="fl">Alasan Ban</label>
+              <input class="fi" id="ban-reason-input" placeholder="Spam, pelanggaran aturan, dll">
+            </div>
+            <div class="fg" style="margin-bottom:10px">
+              <label class="fl">Tipe Ban</label>
+              <select class="fsel" id="ban-type-select" onchange="document.getElementById('ban-expire-row').style.display=this.value==='temp'?'block':'none'">
+                <option value="permanent">🔒 Permanen</option>
+                <option value="temp">⏱ Sementara</option>
+              </select>
+            </div>
+            <div id="ban-expire-row" style="display:none;margin-bottom:10px">
+              <label class="fl">Expire Date</label>
+              <input class="fi" id="ban-expire-input" type="datetime-local">
+            </div>
+            <button class="btn-danger" onclick="window._adminBanSubmit()">🚫 Ban User</button>
+          </div>
+
+          <!-- Daftar Banned Users -->
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--cyan);letter-spacing:1px;margin-bottom:12px">DAFTAR BANNED USERS</div>
+          <div id="ban-list-admin"></div>
+        </div>
+      </div>
+
+      <!-- User Management -->
+      <div class="section" style="margin-top:16px">
+        <div class="section-head">
+          <span class="section-title">👥 User Management</span>
+          <span class="section-badge green">REALTIME</span>
+        </div>
+        <div class="section-body" style="padding:16px">
+          <div id="user-list-admin"></div>
+        </div>
+      </div>
+    `;
+
+    content.appendChild(panel);
+  }
+
+  /* ============================================================
+     10. PATCH switchTab — extend yang sudah ada
+     ============================================================ */
+
+  function _patchSwitchTab() {
+    const orig = window.switchTab;
+    window.switchTab = function (name, el) {
+      // Panggil original handler
+      if (typeof orig === 'function') orig.call(this, name, el);
+      // Handler tambahan untuk tab baru
+      if (name === 'orders') {
+        _renderRtOrders();
+      }
+      if (name === 'gchat-admin') {
+        _renderAdminChat(_chatMsgs);
+      }
+      if (name === 'bans') {
+        renderBanList();
+        renderUserList();
+      }
+    };
+  }
+
+  /* ============================================================
+     11. PATCH doLogout — unsubscribe semua listener
+     ============================================================ */
+
+  function _patchLogout() {
+    const orig = window.doLogout;
+    window.doLogout = function () {
+      rtUnsubscribeAll();
+      if (typeof orig === 'function') orig.call(this);
+    };
+  }
+
+  /* ============================================================
+     12. PATCH loadOrders — gunakan data realtime
+     Admin kadang klik tab orders → intercept render pakai _rtOrders
+     ============================================================ */
+
+  function _patchLoadOrders() {
+    const orig = window.loadOrders;
+    window.loadOrders = async function () {
+      // Jika realtime sudah punya data, render langsung
+      if (_rtOrders.length > 0) {
+        _renderRtOrders();
+        _refreshOrderBadge();
+      } else {
+        // Fallback ke original saat pertama load
+        if (typeof orig === 'function') await orig.call(this);
+      }
+    };
+  }
+
+  /* ============================================================
+     13. PATCH loadAdminGchat — gunakan data realtime
+     ============================================================ */
+
+  function _patchLoadAdminGchat() {
+    const orig = window.loadAdminGchat;
+    window.loadAdminGchat = async function () {
+      if (_chatMsgs.length > 0) {
+        _renderAdminChat(_chatMsgs);
+      } else {
+        if (typeof orig === 'function') await orig.call(this);
+      }
+    };
+  }
+
+  /* ============================================================
+     14. INJECT FILTER TABS untuk orders (Semua | Menunggu | Lunas)
+     ============================================================ */
+
+  function _injectOrderFilterTabs() {
+    const existingFilter = document.getElementById('rt-order-filter-tabs');
+    if (existingFilter) return;
+
+    const ordersHead = document.querySelector('#tab-orders .section-head');
+    if (!ordersHead) return;
+
+    const filterDiv = document.createElement('div');
+    filterDiv.id = 'rt-order-filter-tabs';
+    filterDiv.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px;';
+    filterDiv.innerHTML = `
+      <button class="inner-tab active" id="rtf-semua" onclick="window._rtSetOrderFilter('semua',this)">Semua</button>
+      <button class="inner-tab" id="rtf-menunggu" onclick="window._rtSetOrderFilter('menunggu',this)">⏳ Menunggu</button>
+      <button class="inner-tab" id="rtf-lunas" onclick="window._rtSetOrderFilter('lunas',this)">✅ Lunas</button>
+      <button class="inner-tab" id="rtf-expired" onclick="window._rtSetOrderFilter('expired',this)">❌ Expired</button>
+      <button class="btn-secondary" style="font-size:10px;padding:5px 12px;margin-left:auto" onclick="window._rtExportOrders()">📥 Export CSV</button>
+    `;
+
+    const tabOrders = document.getElementById('tab-orders');
+    if (tabOrders) {
+      const firstSection = tabOrders.querySelector('.section');
+      if (firstSection) firstSection.insertBefore(filterDiv, firstSection.querySelector('.section-body'));
+    }
+  }
+
+  window._rtSetOrderFilter = (filter, btn) => {
+    document.querySelectorAll('#rt-order-filter-tabs .inner-tab').forEach((b) => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    _renderRtOrders(filter);
+  };
+
+  window._rtExportOrders = () => {
+    if (!_rtOrders.length) return _toast('Tidak ada data order!', 'error');
+    const headers = ['ID', 'Produk', 'Harga', 'WA', 'Status', 'Tanggal'];
+    const rows = _rtOrders.map((o) => [
+      o.id || o._key || '',
+      o.produk || o.productName || '',
+      o.harga || o.price || '',
+      o.wa || o.phone || '',
+      o.lunas ? 'lunas' : (o.status || 'menunggu'),
+      o.tanggal || o.waktu || '',
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    _toast('CSV berhasil didownload!', 'success');
+  };
+
+  /* ============================================================
+     15. INIT — jalankan setelah login sukses
+     ============================================================ */
+
+  function _initAllListeners() {
+    initBanSystem();
+    initOrderRealtime();
+    initAdminChatRealtime();
+    initProductsRealtime();
+    initUserManagement();
+  }
+
+  /* ============================================================
+     16. PATCH doLogin — start listeners setelah login
+     ============================================================ */
+
+  function _patchLogin() {
+    const orig = window.doLogin;
+    window.doLogin = function () {
+      if (typeof orig === 'function') orig.call(this);
+      // Cek apakah login berhasil (login screen tersembunyi)
+      setTimeout(() => {
+        const loginScreen = document.getElementById('login-screen');
+        if (loginScreen && loginScreen.style.display === 'none') {
+          _initAllListeners();
+        }
+      }, 300);
+    };
+  }
+
+  /* ============================================================
+     17. BOOT
+     ============================================================ */
+
+  _ready(() => {
+    _patchLogin();
+    _patchLogout();
+    _patchSwitchTab();
+    _patchLoadOrders();
+    _patchLoadAdminGchat();
+    _injectBanUI();
+    _injectOrderFilterTabs();
+
+    // Jika sudah login (refresh saat session aktif di memory)
+    // Admin panel tidak punya session persistence, jadi tidak perlu
+    // auto-init. Listener start setelah doLogin() dipanggil.
+
+    console.log('[FirebaseAdminAddon] ✅ Loaded & patched successfully');
+  });
+
+  /* ============================================================
+     18. EXPOSE PUBLIC API untuk debug & integrasi lanjutan
+     ============================================================ */
+  window.FirebaseAdmin = {
+    banUser,
+    unbanUser,
+    isBanned,
+    rtListen,
+    rtUnsubscribeAll,
+    getOrders: () => [..._rtOrders],
+    getChats: () => [..._chatMsgs],
+    getUsers: () => ({ ..._usersCache }),
+    getBans: () => ({ ..._bansCache }),
+    renderOrders: _renderRtOrders,
+    renderChats: () => _renderAdminChat(_chatMsgs),
+    renderBans: renderBanList,
+    renderUsers: renderUserList,
+  };
+
+})();
+
 </script>
 </body>
 </html>
