@@ -778,13 +778,18 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
   <!-- ===== DOWNLOADER ===== -->
   <div class="panel" id="tab-downloader-cfg">
     <div class="section">
-      <div class="section-head"><div class="section-title">⬇️ Konfigurasi Downloader</div><div class="section-badge">API</div></div>
+      <div class="section-head"><div class="section-title">⬇️ Konfigurasi Downloader</div><div class="section-badge green">Gratis</div></div>
       <div class="section-body">
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:var(--muted2);line-height:1.7">
-          <strong style="color:var(--cyan)">Video Downloader</strong> (TikTok, Instagram, YouTube). TikTok <strong style="color:var(--green)">gratis</strong>. Instagram & YouTube butuh RapidAPI key.
+          <strong style="color:var(--cyan)">Video Downloader</strong> (TikTok, Instagram, YouTube).<br>
+          ✅ <strong style="color:var(--green)">Semua platform gratis</strong> — tidak perlu API key apapun!<br>
+          • TikTok: via TiklyDown API (gratis)<br>
+          • Instagram: via InstaVideoSave API (gratis)<br>
+          • YouTube: via Cobalt API (open source, gratis)
         </div>
-        <div class="fg"><label class="fl">RapidAPI Key (Instagram + YouTube)</label><input type="text" class="fi" id="dl-rapidapi-key" placeholder="Masukkan RapidAPI Key..."><div class="fhint">Daftar gratis di <a href="https://rapidapi.com" target="_blank" style="color:var(--cyan)">rapidapi.com</a></div></div>
-        <button class="btn-save" onclick="saveDlConfig()">💾 Simpan API Key</button>
+        <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:10px;padding:12px;font-size:12px;color:var(--green)">
+          🎉 Downloader aktif otomatis tanpa konfigurasi tambahan!
+        </div>
       </div>
     </div>
     <div class="section">
@@ -1490,9 +1495,11 @@ function confirmReset(type){const map={store:['Reset Config Store?','Data nama, 
 /* ====================================================
    DOWNLOADER CONFIG
    ==================================================== */
-async function saveDlConfig(){const key=document.getElementById('dl-rapidapi-key').value.trim();if(!key)return showToast('Masukkan API key!','error');showToast('Menyimpan...','loading');const ok=await dbSet('store-dl-config',{rapidApiKey:key});ok?showToast('API key tersimpan!','success'):showToast('Gagal!','error');}
-async function loadDlStats(){const el=document.getElementById('dl-stats-info');el.innerHTML='<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';try{const cfg=await dbGet('store-dl-config');el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:18px;color:var(--cyan)">${cfg?.rapidApiKey?'✅':'❌'}</div><div style="font-size:11px;color:var(--muted2);margin-top:4px">API Key</div></div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:18px;color:var(--green)">3</div><div style="font-size:11px;color:var(--muted2);margin-top:4px">Platform</div></div></div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11px;color:var(--muted2)">TikTok ✅ · Instagram ${cfg?.rapidApiKey?'✅':'⚠️ (butuh key)'} · YouTube ${cfg?.rapidApiKey?'✅':'⚠️ (butuh key)'}</div>`;if(cfg?.rapidApiKey)document.getElementById('dl-rapidapi-key').value=cfg.rapidApiKey;}catch{el.innerHTML='<div style="color:var(--red);font-size:12px">Gagal memuat.</div>';}}
-
+async function saveDlConfig(){showToast('Downloader aktif tanpa konfigurasi!','success');}
+async function loadDlStats(){
+  const el=document.getElementById('dl-stats-info');
+  el.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px"><div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center"><div style="font-size:18px;color:var(--green)">✅</div><div style="font-size:11px;color:var(--muted2);margin-top:4px">TikTok</div></div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center"><div style="font-size:18px;color:var(--green)">✅</div><div style="font-size:11px;color:var(--muted2);margin-top:4px">Instagram</div></div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center"><div style="font-size:18px;color:var(--green)">✅</div><div style="font-size:11px;color:var(--muted2);margin-top:4px">YouTube</div></div></div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11px;color:var(--muted2)">Semua platform aktif ✅ — TiklyDown · InstaVideoSave · Cobalt (tanpa API key)</div>';
+}
 /* ====================================================
    GCHAT ADMIN
    ==================================================== */
