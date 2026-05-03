@@ -914,7 +914,7 @@ IDENTITAS:
 - Bahasa: Indonesia kasual (kak, nih, dong, sih, aja, dll)
 
 PRODUK YANG DIJUAL:
-1. 🤖 Sewa Bot WhatsApp (Evernight AI Multidevice)
+1. 🤖 Sewa Bot WhatsApp (Alya AI Multidevice)
    - 1 hari: Rp500 | 3 hari: Rp2.000 | 5 hari: Rp3.500 | 7 hari: Rp4.000
    - 14 hari: Rp6.000 | 1 bulan: Rp7.000 | 3 bulan: Rp26.000 | 1 tahun: Rp40.000
    - Fitur: 1800+ command, game, sticker, info, moderasi grup
@@ -925,7 +925,7 @@ PRODUK YANG DIJUAL:
    - 2 bulan: Rp12.000 | Permanen: Rp50.000
    - VPS legal, uptime 99.9%, RAM 2GB - Unlimited
 
-3. 📦 SC Evernight AI (Source Code)
+3. 📦 SC Alya AI (Source Code)
    - Harga: Rp75.000 (beli sekali, update gratis selamanya)
    - Full source code tanpa enkripsi, 1800+ fitur
 
@@ -1035,7 +1035,7 @@ async function loadAll(){
   cfg.store=store||{nama:'UnoTech Store',tagline:'Panel Pterodactyl VPS Legal',desc:''};
   cfg.kontak=kontak||{adminWa:'628132988940',grupBuyer:'',cs2:''};
   cfg.produk=prods||getDefaultProducts();
-  cfg.marquee=marquee||['Bot WA — Rp2.000','SC Evernight Ai — Rp75.000'];
+  cfg.marquee=marquee||['Bot WA — Rp2.000','SC Alya Ai — Rp75.000'];
   cfg.tampilan=tampilan||{accent:'#7c3aed',accent2:'#d946ef',avatar:'U'};
   cfg.fitur=fitur||{maintenance:false,'badge-baru':true,rating:true};
   cfg.drawer=drawer||[{label:'🏠 Home',url:'#top'},{label:'🤖 Perpanjang Sewa Bot',url:'#renew-bot'},{label:'🔄 Perpanjang Panel',url:'#renew'},{label:'🔍 Track Order',url:'#track'},{label:'⭐ Ulasan',url:'#ulasan'}];
@@ -1132,7 +1132,7 @@ async function saveFitur(){showToast('Menyimpan...','loading');const ok=await db
 /* ====================================================
    PRODUK
    ==================================================== */
-function getDefaultProducts(){return[{id:'sewa-bot',title:'Sewa Bot',imgTitle:'SEWA BOT EVERNIGHT MULTIDEVICE',price:'Rp500',available:'Tersedia hingga Rp40.000',cat:'bot-wa',desc:'Sewa bot 1800+ fitur.',varians:[{name:'1 hari',price:'Rp500'},{name:'7 hari',price:'Rp4.000'},{name:'1 bulan',price:'Rp7.000'}],features:[{icon:'💬',name:'Bot WA',desc:'Aktif langsung di grup'},{icon:'⚡',name:'1800+ Fitur',desc:'Command lengkap'}]},{id:'panel',title:'Panel Bot WA',imgTitle:'PANEL PTERO PREMIUM',price:'Rp2.000',available:'Tersedia: Unlimited',cat:'panel',desc:'Panel pterodactyl VPS legal.',varians:[{name:'1 minggu',price:'Rp2.000'},{name:'1 bulan',price:'Rp7.000'},{name:'Permanen',price:'Rp50.000'}],features:[{icon:'🖥️',name:'VPS Legal',desc:'Berlisensi resmi'},{icon:'🔒',name:'Aman',desc:'Uptime 99.9%'}]},{id:'script',title:'SC Evernight Ai',imgTitle:'EVERNIGHT V10.5 PREMIUM',price:'Rp75.000',available:'Tersedia: Unlimited',cat:'source-code',desc:'Source code premium 1800+ fitur.',varians:[{name:'Download',price:'Rp75.000'}],features:[{icon:'📦',name:'Full Source',desc:'Tanpa enkripsi'},{icon:'🔄',name:'Update Gratis',desc:'Versi terbaru'}]}];}
+function getDefaultProducts(){return[{id:'sewa-bot',title:'Sewa Bot',imgTitle:'SEWA BOT EVERNIGHT MULTIDEVICE',price:'Rp500',available:'Tersedia hingga Rp40.000',cat:'bot-wa',desc:'Sewa bot 1800+ fitur.',varians:[{name:'1 hari',price:'Rp500'},{name:'7 hari',price:'Rp4.000'},{name:'1 bulan',price:'Rp7.000'}],features:[{icon:'💬',name:'Bot WA',desc:'Aktif langsung di grup'},{icon:'⚡',name:'1800+ Fitur',desc:'Command lengkap'}]},{id:'panel',title:'Panel Bot WA',imgTitle:'PANEL PTERO PREMIUM',price:'Rp2.000',available:'Tersedia: Unlimited',cat:'panel',desc:'Panel pterodactyl VPS legal.',varians:[{name:'1 minggu',price:'Rp2.000'},{name:'1 bulan',price:'Rp7.000'},{name:'Permanen',price:'Rp50.000'}],features:[{icon:'🖥️',name:'VPS Legal',desc:'Berlisensi resmi'},{icon:'🔒',name:'Aman',desc:'Uptime 99.9%'}]},{id:'script',title:'SC Alya Ai',imgTitle:'EVERNIGHT V10.5 PREMIUM',price:'Rp75.000',available:'Tersedia: Unlimited',cat:'source-code',desc:'Source code premium 1800+ fitur.',varians:[{name:'Download',price:'Rp75.000'}],features:[{icon:'📦',name:'Full Source',desc:'Tanpa enkripsi'},{icon:'🔄',name:'Update Gratis',desc:'Versi terbaru'}]}];}
 
 function renderProdList(){const list=document.getElementById('prod-list');list.innerHTML='';document.getElementById('prod-count-badge').textContent=`${cfg.produk.length} produk`;cfg.produk.forEach((p,i)=>{const el=document.createElement('div');el.className='prod-item';el.innerHTML=`<div class="prod-item-head"><div><div class="prod-item-title">${esc(p.title)}</div><div class="prod-item-id">#${esc(p.id)} · ${esc(p.cat)} · ${p.varians.length} varian</div></div><div style="display:flex;gap:6px"><button class="btn-icon edit" onclick="openEditProd(${i})">✏️</button><button class="btn-icon" onclick="confirmDeleteProd(${i})">🗑️</button></div></div><div style="font-size:12px;color:var(--muted2);line-height:1.5">${esc(p.desc||'')}</div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">${p.varians.map(v=>`<span style="font-family:'Space Mono',monospace;font-size:10px;background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:3px 8px;color:var(--cyan)">${esc(v.name)}: ${esc(v.price)}</span>`).join('')}</div>`;list.appendChild(el);});}
 
@@ -1318,7 +1318,7 @@ async function loadProdukImg(){const data=await dbGet('store-img-produk');prodIm
 /* ====================================================
    HERO SLIDES
    ==================================================== */
-function renderHeroSlideList(){const c=document.getElementById('hero-slide-list');c.innerHTML='';if(!heroSlidesList.length){c.innerHTML='<div class="info-banner" style="margin:0">Slide kosong — otomatis dari produk.</div>';return;}heroSlidesList.forEach((s,i)=>{const el=document.createElement('div');el.className='slide-item';el.innerHTML=`<div class="slide-item-head"><div class="slide-num">SLIDE ${i+1}</div><button class="btn-icon" style="color:var(--red)" onclick="removeHeroSlide(${i})">×</button></div><div class="slide-preview" id="sp-${i}" style="${s.imgUrl?`background-image:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),url('${s.imgUrl}')`:''}">${!s.imgUrl?'Preview':''}${s.title?`<div class="slide-preview-overlay" id="spo-${i}">${esc(s.title)}</div>`:''}</div><div class="fg" style="margin-bottom:8px"><label class="fl">Judul</label><input class="fi" placeholder="Judul slide" value="${esc(s.title||'')}" oninput="heroSlidesList[${i}].title=this.value" style="margin:0"></div><div class="fg" style="margin-bottom:8px"><label class="fl">Badge</label><input class="fi" placeholder="Sewa Bot" value="${esc(s.badge||'')}" oninput="heroSlidesList[${i}].badge=this.value" style="margin:0"></div><div class="fg" style="margin-bottom:8px"><label class="fl">Subtitle</label><input class="fi" placeholder="Deskripsi singkat" value="${esc(s.subtitle||'')}" oninput="heroSlidesList[${i}].subtitle=this.value" style="margin:0"></div><div class="fg" style="margin-bottom:8px"><label class="fl">Teks Overlay Bawah</label><input class="fi" placeholder="Sewa Bot Evernight" value="${esc(s.titleOverlay||'')}" oninput="heroSlidesList[${i}].titleOverlay=this.value" style="margin:0"></div><div class="grid2" style="margin-bottom:8px"><div class="fg" style="margin:0"><label class="fl">Label Tombol</label><input class="fi" value="${esc(s.btnLabel||'Lihat →')}" oninput="heroSlidesList[${i}].btnLabel=this.value" style="margin:0"></div><div class="fg" style="margin:0"><label class="fl">Index Produk</label><input class="fi" type="number" value="${s.prodIdx??0}" oninput="heroSlidesList[${i}].prodIdx=parseInt(this.value)||0" style="margin:0"></div></div><div class="fg" style="margin:0"><label class="fl">URL Gambar (opsional)</label><input class="fi" placeholder="https://..." value="${esc(s.imgUrl||'')}" oninput="heroSlidesList[${i}].imgUrl=this.value" style="margin:0"><div class="fhint">Kosong = gradient animasi otomatis</div></div>`;c.appendChild(el);});}
+function renderHeroSlideList(){const c=document.getElementById('hero-slide-list');c.innerHTML='';if(!heroSlidesList.length){c.innerHTML='<div class="info-banner" style="margin:0">Slide kosong — otomatis dari produk.</div>';return;}heroSlidesList.forEach((s,i)=>{const el=document.createElement('div');el.className='slide-item';el.innerHTML=`<div class="slide-item-head"><div class="slide-num">SLIDE ${i+1}</div><button class="btn-icon" style="color:var(--red)" onclick="removeHeroSlide(${i})">×</button></div><div class="slide-preview" id="sp-${i}" style="${s.imgUrl?`background-image:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),url('${s.imgUrl}')`:''}">${!s.imgUrl?'Preview':''}${s.title?`<div class="slide-preview-overlay" id="spo-${i}">${esc(s.title)}</div>`:''}</div><div class="fg" style="margin-bottom:8px"><label class="fl">Judul</label><input class="fi" placeholder="Judul slide" value="${esc(s.title||'')}" oninput="heroSlidesList[${i}].title=this.value" style="margin:0"></div><div class="fg" style="margin-bottom:8px"><label class="fl">Badge</label><input class="fi" placeholder="Sewa Bot" value="${esc(s.badge||'')}" oninput="heroSlidesList[${i}].badge=this.value" style="margin:0"></div><div class="fg" style="margin-bottom:8px"><label class="fl">Subtitle</label><input class="fi" placeholder="Deskripsi singkat" value="${esc(s.subtitle||'')}" oninput="heroSlidesList[${i}].subtitle=this.value" style="margin:0"></div><div class="fg" style="margin-bottom:8px"><label class="fl">Teks Overlay Bawah</label><input class="fi" placeholder="Sewa Bot Alya" value="${esc(s.titleOverlay||'')}" oninput="heroSlidesList[${i}].titleOverlay=this.value" style="margin:0"></div><div class="grid2" style="margin-bottom:8px"><div class="fg" style="margin:0"><label class="fl">Label Tombol</label><input class="fi" value="${esc(s.btnLabel||'Lihat →')}" oninput="heroSlidesList[${i}].btnLabel=this.value" style="margin:0"></div><div class="fg" style="margin:0"><label class="fl">Index Produk</label><input class="fi" type="number" value="${s.prodIdx??0}" oninput="heroSlidesList[${i}].prodIdx=parseInt(this.value)||0" style="margin:0"></div></div><div class="fg" style="margin:0"><label class="fl">URL Gambar (opsional)</label><input class="fi" placeholder="https://..." value="${esc(s.imgUrl||'')}" oninput="heroSlidesList[${i}].imgUrl=this.value" style="margin:0"><div class="fhint">Kosong = gradient animasi otomatis</div></div>`;c.appendChild(el);});}
 function addHeroSlide(){heroSlidesList.push({badge:'',title:'',subtitle:'',titleOverlay:'',btnLabel:'Lihat →',prodIdx:0,imgUrl:''});renderHeroSlideList();}
 function removeHeroSlide(i){heroSlidesList.splice(i,1);renderHeroSlideList();}
 async function saveHeroSlides(){showToast('Menyimpan slider...','loading');const ok=await dbSet('store-hero-slides',heroSlidesList);ok?showToast('Hero slider tersimpan! ✨','success'):showToast('Gagal!','error');}
@@ -1369,7 +1369,7 @@ async function loadAiCsConfig(){
 
 function toggleAiCsActive(){aiCsActive=!aiCsActive;const el=document.getElementById('tg-ai-cs');if(el)el.className='toggle'+(aiCsActive?' on-purple':'');}
 
-function getDefaultFakeBuyers(){return[{name:'Reza',city:'Jakarta',product:'Sewa Bot 1 bulan',avatar:'R'},{name:'Fajar',city:'Surabaya',product:'Panel Bot WA 2 minggu',avatar:'F'},{name:'Dinda',city:'Bandung',product:'SC Evernight Ai',avatar:'D'},{name:'Aldi',city:'Medan',product:'Sewa Bot 7 hari',avatar:'A'},{name:'Sinta',city:'Yogyakarta',product:'Panel Bot WA 1 bulan',avatar:'S'},{name:'Bagas',city:'Semarang',product:'Sewa Bot 14 hari',avatar:'B'},{name:'Nadia',city:'Makassar',product:'SC Evernight Ai',avatar:'N'},{name:'Rizki',city:'Palembang',product:'Sewa Bot 3 bulan',avatar:'R'},{name:'Ayu',city:'Denpasar',product:'Panel Bot WA Permanen',avatar:'A'},{name:'Hendra',city:'Malang',product:'Sewa Bot 1 tahun',avatar:'H'}];}
+function getDefaultFakeBuyers(){return[{name:'Reza',city:'Jakarta',product:'Sewa Bot 1 bulan',avatar:'R'},{name:'Fajar',city:'Surabaya',product:'Panel Bot WA 2 minggu',avatar:'F'},{name:'Dinda',city:'Bandung',product:'SC Alya Ai',avatar:'D'},{name:'Aldi',city:'Medan',product:'Sewa Bot 7 hari',avatar:'A'},{name:'Sinta',city:'Yogyakarta',product:'Panel Bot WA 1 bulan',avatar:'S'},{name:'Bagas',city:'Semarang',product:'Sewa Bot 14 hari',avatar:'B'},{name:'Nadia',city:'Makassar',product:'SC Alya Ai',avatar:'N'},{name:'Rizki',city:'Palembang',product:'Sewa Bot 3 bulan',avatar:'R'},{name:'Ayu',city:'Denpasar',product:'Panel Bot WA Permanen',avatar:'A'},{name:'Hendra',city:'Malang',product:'Sewa Bot 1 tahun',avatar:'H'}];}
 
 function renderFakeBuyers(){
   const c=document.getElementById('fake-buyers-list');c.innerHTML='';
@@ -1657,12 +1657,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   function _url(path) {
     const base = window.FIREBASE_URL || '';
     const tok = window.FIREBASE_TOKEN || '';
-    return `${base}/${path}.json${tok ? '?auth=' + tok : ''}`;
+    // Normalize: strip leading "store/" agar tidak double prefix
+    const clean = path.replace(/^\/store\//, '').replace(/^store\//, '');
+    return `${base}/store/${clean}.json${tok ? '?auth=' + tok : ''}`;
   }
   function _urlQ(path, q) {
     const base = window.FIREBASE_URL || '';
     const tok = window.FIREBASE_TOKEN || '';
-    return `${base}/${path}.json?${tok ? 'auth=' + tok + '&' : ''}${q}`;
+    const clean = path.replace(/^\/store\//, '').replace(/^store\//, '');
+    return `${base}/store/${clean}.json?${tok ? 'auth=' + tok + '&' : ''}${q}`;
   }
 
   async function _get(path) {
