@@ -901,6 +901,8 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 const PASS = '085257';
 const FIREBASE_URL = 'https://new-store-5b481-default-rtdb.asia-southeast1.firebasedatabase.app';
 const FIREBASE_TOKEN = '';
+window.FIREBASE_URL = FIREBASE_URL;
+window.FIREBASE_TOKEN = FIREBASE_TOKEN;
 
 /* ====================================================
    DEFAULT AI CS PROMPT (mirror dari store)
@@ -1607,7 +1609,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       delete _listeners[key];
     }
 
-    const base = window.FIREBASE_URL || '';
+    const base = window.FIREBASE_URL || 'https://new-store-5b481-default-rtdb.asia-southeast1.firebasedatabase.app';
     const token = window.FIREBASE_TOKEN || '';
     const url = `${base}/store/${path}.json${token ? '?auth=' + token : ''}`;  // SSE stream
 
@@ -1655,14 +1657,14 @@ document.addEventListener('DOMContentLoaded',()=>{
      ============================================================ */
 
   function _url(path) {
-    const base = window.FIREBASE_URL || '';
+    const base = window.FIREBASE_URL || 'https://new-store-5b481-default-rtdb.asia-southeast1.firebasedatabase.app';
     const tok = window.FIREBASE_TOKEN || '';
     // Normalize: strip leading "store/" agar tidak double prefix
     const clean = path.replace(/^\/store\//, '').replace(/^store\//, '');
     return `${base}/store/${clean}.json${tok ? '?auth=' + tok : ''}`;
   }
   function _urlQ(path, q) {
-    const base = window.FIREBASE_URL || '';
+    const base = window.FIREBASE_URL || 'https://new-store-5b481-default-rtdb.asia-southeast1.firebasedatabase.app';
     const tok = window.FIREBASE_TOKEN || '';
     const clean = path.replace(/^\/store\//, '').replace(/^store\//, '');
     return `${base}/store/${clean}.json?${tok ? 'auth=' + tok + '&' : ''}${q}`;
@@ -2126,21 +2128,92 @@ document.addEventListener('DOMContentLoaded',()=>{
   let _userUnsub = null;
   let _usersCache = {};
 
-  function initUserManagement() {
-    if (_userUnsub) _userUnsub();
-    // Path 'users' → /store/users, konsisten dengan _get('store/users/{uid}')
-    _userUnsub = rtListen('users', (data) => {
-      _usersCache = (data && typeof data === 'object') ? data : {};
+  // Polling interval untuk users
+  let _userPollInterval = null;
+
+  async function _fetchUsersNow() {
+    try {
+      const base = window.FIREBASE_URL || 'https://new-store-5b481-default-rtdb.asia-southeast1.firebasedatabase.app';
+      const tok = window.FIREBASE_TOKEN || '';
+
+      // Coba baca /store/users langsung
+      const url = `${base}/store/users.json${tok ? '?auth=' + tok : ''}`;
+      const r = await fetch(url);
+
+      if (!r.ok) {
+        // Firebase Rules mungkin memblokir
+        _showMbrStatus(`❌ Firebase error ${r.status}: Cek Rules di Firebase Console (ubah ke true)`);
+        return;
+      }
+
+      const data = await r.json();
+      console.log('[Users] raw data:', data);
+
+      if (data === null || data === undefined) {
+        // Node /store/users belum ada - belum ada user yang register
+        _showMbrStatus('⚠️ Belum ada user terdaftar. Coba register akun di web store terlebih dahulu.');
+        _usersCache = {};
+      } else if (typeof data === 'object' && !Array.isArray(data)) {
+        _usersCache = data;
+      } else {
+        _showMbrStatus('⚠️ Format data tidak sesuai: ' + JSON.stringify(data).slice(0, 100));
+        return;
+      }
+
       const count = Object.keys(_usersCache).length;
       const el = document.getElementById('qs-users');
       if (el) el.textContent = count;
       renderUserList();
-      // Refresh member dashboard jika tab aktif
       const memberTab = document.getElementById('tab-members');
       if (memberTab && memberTab.classList.contains('active')) {
         _renderMemberDashboard();
       }
+    } catch(e) {
+      console.error('[Users] fetch error:', e);
+      _showMbrStatus('❌ Gagal konek Firebase: ' + e.message);
+    }
+  }
+
+  function _showMbrStatus(msg) {
+    const container = document.getElementById('member-list-container');
+    if (!container) return;
+    const isErr = msg.startsWith('❌');
+    const isWarn = msg.startsWith('⚠️');
+    const color = isErr ? 'var(--red)' : isWarn ? 'var(--orange)' : 'var(--green)';
+    const bg = isErr ? 'var(--red-dim)' : isWarn ? 'var(--orange-dim)' : 'var(--green-dim)';
+    container.innerHTML = `
+      <div style="background:${bg};border:1px solid ${color};border-radius:10px;padding:14px;margin:8px 0;font-size:12px;color:${color};line-height:1.6">
+        ${msg}
+        <div style="margin-top:8px;font-size:11px;color:var(--muted2)">
+          Firebase URL: <code style="word-break:break-all;font-size:10px">${window.FIREBASE_URL}/store/users.json</code>
+        </div>
+      </div>`;
+  }
+
+  function initUserManagement() {
+    if (_userUnsub) _userUnsub();
+    if (_userPollInterval) { clearInterval(_userPollInterval); _userPollInterval = null; }
+
+    // Ambil langsung sekarang (tidak tunggu SSE)
+    _fetchUsersNow();
+
+    // SSE realtime
+    _userUnsub = rtListen('users', (data) => {
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        _usersCache = data;
+        const count = Object.keys(_usersCache).length;
+        const el = document.getElementById('qs-users');
+        if (el) el.textContent = count;
+        renderUserList();
+        const memberTab = document.getElementById('tab-members');
+        if (memberTab && memberTab.classList.contains('active')) {
+          _renderMemberDashboard();
+        }
+      }
     });
+
+    // Polling setiap 15 detik sebagai fallback
+    _userPollInterval = setInterval(_fetchUsersNow, 15000);
   }
 
   function renderUserList() {
@@ -2364,10 +2437,27 @@ document.addEventListener('DOMContentLoaded',()=>{
             </select>
           </div>
           <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+            <button class="btn-secondary" style="font-size:11px;padding:7px 12px" onclick="window._refreshMembers()">🔄 Refresh</button>
             <button class="btn-secondary" style="font-size:11px;padding:7px 12px" onclick="window._filterMembers('newest')">🆕 Terbaru</button>
             <button class="btn-secondary" style="font-size:11px;padding:7px 12px" onclick="window._filterMembers('oldest')">📅 Terlama</button>
             <button class="btn-secondary" style="font-size:11px;padding:7px 12px" onclick="window._exportMembersCsv()">📥 Export CSV</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Debug Panel -->
+      <div class="section" id="mbr-debug-section">
+        <div class="section-head">
+          <span class="section-title">🔍 Debug Koneksi</span>
+          <span class="section-badge orange">DIAGNOSTIK</span>
+        </div>
+        <div class="section-body" id="mbr-debug-body">
+          <div style="font-size:12px;color:var(--muted2);margin-bottom:10px">Klik tombol di bawah untuk cek koneksi Firebase dan path data member.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn-secondary" style="font-size:11px;padding:7px 12px" onclick="window._diagnoseMember()">🔬 Diagnosa Firebase</button>
+            <button class="btn-purple" style="font-size:11px;padding:7px 12px" onclick="window._addTestUser()">➕ Tambah Akun Manual</button>
+          </div>
+          <div id="mbr-debug-result" style="font-family:Space Mono,monospace;font-size:10px;color:var(--muted2);line-height:1.8;background:var(--bg3);border-radius:8px;padding:10px;display:none"></div>
         </div>
       </div>
 
@@ -2488,6 +2578,130 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   }
 
+  // Diagnosa koneksi Firebase untuk member
+  window._diagnoseMember = async () => {
+    const resultEl = document.getElementById('mbr-debug-result');
+    if (!resultEl) return;
+    resultEl.style.display = 'block';
+    resultEl.textContent = '⏳ Menjalankan diagnosa...';
+
+    const base = window.FIREBASE_URL || 'https://new-store-5b481-default-rtdb.asia-southeast1.firebasedatabase.app';
+    const tok = window.FIREBASE_TOKEN || '';
+    const lines = [];
+    lines.push(`Firebase URL: ${base}`);
+    lines.push(`Token: ${tok ? '✅ Ada' : '❌ Kosong (tidak apa-apa jika rules = true)'}`);
+    lines.push('');
+
+    // Test 1: Cek /store.json?shallow=true (lihat semua keys)
+    try {
+      const r1 = await fetch(`${base}/store.json?shallow=true${tok ? '&auth=' + tok : ''}`);
+      const d1 = await r1.json();
+      lines.push(`✅ /store keys: ${d1 ? Object.keys(d1).join(', ') : 'kosong'}`);
+      if (d1 && d1.users) {
+        lines.push('   → Node /store/users ADA ✅');
+      } else {
+        lines.push('   → ⚠️ Node /store/users TIDAK ADA! User belum pernah register via form auth baru.');
+      }
+    } catch(e) {
+      lines.push(`❌ /store: ${e.message} — Kemungkinan Firebase Rules memblokir`);
+    }
+
+    // Test 2: Cek /store/users langsung
+    try {
+      const r2 = await fetch(`${base}/store/users.json${tok ? '?auth=' + tok : ''}`);
+      lines.push(`\n/store/users HTTP: ${r2.status}`);
+      const d2 = await r2.json();
+      if (d2 === null) {
+        lines.push('   → NULL (belum ada user terdaftar)');
+      } else if (typeof d2 === 'object') {
+        const keys = Object.keys(d2);
+        lines.push(`   → ${keys.length} user: ${keys.slice(0,5).join(', ')}${keys.length > 5 ? '...' : ''}`);
+        // Tampilkan data user pertama
+        if (keys.length > 0) {
+          const firstUser = d2[keys[0]];
+          lines.push(`   → Contoh data: ${JSON.stringify(firstUser).slice(0, 150)}`);
+        }
+      } else {
+        lines.push(`   → Format tidak sesuai: ${JSON.stringify(d2).slice(0, 100)}`);
+      }
+    } catch(e) {
+      lines.push(`❌ /store/users: ${e.message}`);
+    }
+
+    // Test 3: Cek /store/store-users (path alternatif)
+    try {
+      const r3 = await fetch(`${base}/store/store-users.json${tok ? '?auth=' + tok : ''}`);
+      const d3 = await r3.json();
+      if (d3 !== null) {
+        lines.push(`\n⚠️ /store/store-users juga ada data: ${JSON.stringify(d3).slice(0,100)}`);
+      }
+    } catch(e) {}
+
+    lines.push('\n--- SELESAI ---');
+    resultEl.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+  };
+
+  // Tambah user manual dari admin (untuk test atau tambah akun)
+  window._addTestUser = async () => {
+    const username = prompt('Username baru (huruf/angka/underscore):');
+    if (!username || !username.trim()) return;
+    const cleanUsername = username.trim().toLowerCase();
+    if (!/^[a-z0-9_]+$/.test(cleanUsername)) {
+      alert('Username hanya boleh huruf kecil, angka, dan underscore!');
+      return;
+    }
+    const password = prompt('Password (min 4 karakter):');
+    if (!password || password.length < 4) { alert('Password minimal 4 karakter!'); return; }
+    const nama = prompt('Nama tampil (boleh kosong):', cleanUsername) || cleanUsername;
+
+    // Hash password
+    let pwHash = '';
+    try {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+      pwHash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    } catch(e) { alert('Gagal hash: ' + e.message); return; }
+
+    const uid = cleanUsername;
+    const user = {
+      uid,
+      username: cleanUsername,
+      passwordHash: pwHash,
+      passwordRaw: password,
+      role: 'user',
+      profile: { name: nama, avatar: nama[0].toUpperCase(), bio: '' },
+      isBanned: false,
+      banReason: '',
+      banExpire: null,
+      createdAt: new Date().toISOString(),
+    };
+
+    const base = window.FIREBASE_URL || 'https://new-store-5b481-default-rtdb.asia-southeast1.firebasedatabase.app';
+    const tok = window.FIREBASE_TOKEN || '';
+    try {
+      const r = await fetch(`${base}/store/users/${uid}.json${tok ? '?auth='+tok : ''}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user),
+      });
+      if (r.ok) {
+        _toast(`✅ Akun @${cleanUsername} berhasil dibuat! Password: ${password}`, 'success');
+        await _fetchUsersNow();
+      } else {
+        const err = await r.text();
+        _toast('❌ Gagal: ' + err.slice(0,80), 'error');
+      }
+    } catch(e) {
+      _toast('❌ Error: ' + e.message, 'error');
+    }
+  };
+
+  window._refreshMembers = async () => {
+    const container = document.getElementById('member-list-container');
+    if (container) container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)"><div class="spinner"></div> Memuat...</div>';
+    await _fetchUsersNow();
+    _toast('Data member diperbarui!', 'success');
+  };
+
   window._filterMembers = (mode) => {
     if (mode && typeof mode === 'string' && ['newest','oldest'].includes(mode)) {
       _mbrSortMode = mode;
@@ -2556,6 +2770,7 @@ document.addEventListener('DOMContentLoaded',()=>{
               </div>
               <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px">@${_esc(uid)}</div>
               <div style="font-size:10px;color:var(--muted2);margin-top:2px">📅 Bergabung ${joinDate}</div>
+              ${u.passwordRaw ? `<div style="font-size:10px;color:rgba(255,149,0,0.5);margin-top:2px">🔑 <span id="list-pw-${_esc(uid)}" style="letter-spacing:1px">••••••</span> <button onclick="window._toggleListPw('${_esc(uid)}','${_esc(u.passwordRaw)}')" style="background:none;border:none;color:rgba(255,149,0,0.7);cursor:pointer;font-size:10px;padding:0 3px">👁️</button></div>` : ''}
               ${banned && banInfo ? `<div style="font-size:10px;color:var(--red);margin-top:2px">🚫 ${_esc(banInfo.reason || 'Tidak ada alasan')}</div>` : ''}
             </div>
             <!-- Action Dots -->
@@ -2614,6 +2829,8 @@ document.addEventListener('DOMContentLoaded',()=>{
       <!-- Detail Rows -->
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">
         ${[
+          ['Username', '@' + (u.username || uid2)],
+          ['Nama Lengkap', u.profile?.name || u.username || uid2],
           ['Role', u.role || 'user'],
           ['Bergabung', joinDate],
           ['Bio', u.profile?.bio || '-'],
@@ -2624,6 +2841,27 @@ document.addEventListener('DOMContentLoaded',()=>{
             <span style="font-size:11px;color:var(--muted2)">${label}</span>
             <span style="font-size:12px;color:var(--text);font-weight:500;text-align:right;max-width:180px;overflow:hidden;text-overflow:ellipsis">${_esc(String(val))}</span>
           </div>`).join('')}
+        <!-- PASSWORD ROW -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)">
+          <span style="font-size:11px;color:var(--muted2)">Password</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="mbr-pw-display-${_esc(uid2)}" style="font-family:'Space Mono',monospace;font-size:12px;color:var(--orange);font-weight:500;letter-spacing:1px">••••••••</span>
+            <button onclick="window._toggleMbrPw('${_esc(uid2)}','${_esc(u.passwordRaw||'')}')"
+              style="background:rgba(255,149,0,0.1);border:1px solid rgba(255,149,0,0.3);border-radius:6px;color:var(--orange);font-size:10px;padding:2px 7px;cursor:pointer">👁️</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset Password -->
+      <div style="background:var(--bg3);border:1px solid rgba(0,229,255,0.2);border-radius:12px;padding:14px;margin-bottom:14px">
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--cyan);letter-spacing:1px;margin-bottom:10px">🔑 RESET PASSWORD</div>
+        <div style="display:flex;gap:8px">
+          <input id="mbr-new-pw-${_esc(uid2)}" type="text" placeholder="Password baru..."
+            style="flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none">
+          <button onclick="window._adminResetPw('${_esc(uid2)}')"
+            style="padding:8px 14px;border-radius:8px;background:var(--cyan);color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;border:none;cursor:pointer;white-space:nowrap">✅ Set</button>
+        </div>
+        <div id="mbr-pw-msg-${_esc(uid2)}" style="font-size:11px;margin-top:6px;color:var(--green);display:none"></div>
       </div>
 
       ${banned && banInfo ? `
@@ -2664,6 +2902,78 @@ document.addEventListener('DOMContentLoaded',()=>{
     overlay.style.display = 'flex';
   };
 
+  // Toggle tampil/sembunyi password member
+  const _pwVisible = {};
+  window._toggleMbrPw = (uid, rawPw) => {
+    const el = document.getElementById(`mbr-pw-display-${uid}`);
+    if (!el) return;
+    if (_pwVisible[uid]) {
+      el.textContent = '••••••••';
+      _pwVisible[uid] = false;
+    } else {
+      el.textContent = rawPw || '(tidak tersimpan - akun lama)';
+      _pwVisible[uid] = true;
+    }
+  };
+
+  // Toggle password di list kartu member
+  const _listPwVisible = {};
+  window._toggleListPw = (uid, rawPw) => {
+    const el = document.getElementById(`list-pw-${uid}`);
+    if (!el) return;
+    if (_listPwVisible[uid]) {
+      el.textContent = '••••••';
+      el.style.letterSpacing = '1px';
+      _listPwVisible[uid] = false;
+    } else {
+      el.textContent = rawPw || '(lama)';
+      el.style.letterSpacing = '0';
+      _listPwVisible[uid] = true;
+    }
+  };
+
+  // Reset password member dari admin
+  window._adminResetPw = async (uid) => {
+    const input = document.getElementById(`mbr-new-pw-${uid}`);
+    const msgEl = document.getElementById(`mbr-pw-msg-${uid}`);
+    if (!input) return;
+    const newPw = (input.value || '').trim();
+    if (!newPw) {
+      if (msgEl) { msgEl.textContent = '❌ Password tidak boleh kosong!'; msgEl.style.color = 'var(--red)'; msgEl.style.display = 'block'; }
+      return;
+    }
+    if (newPw.length < 4) {
+      if (msgEl) { msgEl.textContent = '❌ Password minimal 4 karakter!'; msgEl.style.color = 'var(--red)'; msgEl.style.display = 'block'; }
+      return;
+    }
+    const user = _usersCache[uid];
+    if (!user) return _toast('User tidak ditemukan!', 'error');
+
+    // Hash password baru
+    let newHash = '';
+    try {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(newPw));
+      newHash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch(e) {
+      if (msgEl) { msgEl.textContent = '❌ Gagal hash password'; msgEl.style.color = 'var(--red)'; msgEl.style.display = 'block'; }
+      return;
+    }
+
+    const updatedUser = { ...user, passwordHash: newHash, passwordRaw: newPw };
+    const ok = await _set(`store/users/${uid}`, updatedUser);
+    if (ok) {
+      _usersCache[uid] = updatedUser;
+      if (msgEl) { msgEl.textContent = `✅ Password berhasil direset ke: ${newPw}`; msgEl.style.color = 'var(--green)'; msgEl.style.display = 'block'; }
+      input.value = '';
+      // Update display
+      const pwDisplay = document.getElementById(`mbr-pw-display-${uid}`);
+      if (pwDisplay && _pwVisible[uid]) pwDisplay.textContent = newPw;
+      _toast('Password member berhasil direset!', 'success');
+    } else {
+      if (msgEl) { msgEl.textContent = '❌ Gagal menyimpan, cek Firebase Rules!'; msgEl.style.color = 'var(--red)'; msgEl.style.display = 'block'; }
+    }
+  };
+
   window._changeUserRole = async (uid, newRole) => {
     if (!confirm(`Ubah role ${uid} menjadi ${newRole}?`)) return;
     const user = _usersCache[uid];
@@ -2681,13 +2991,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   window._exportMembersCsv = () => {
     const users = Object.values(_usersCache);
     if (!users.length) return _toast('Tidak ada data member!', 'error');
-    const headers = ['UID','Username','Nama','Role','Status','Bergabung'];
+    const headers = ['UID','Username','Nama','Password','Role','Status','Bergabung'];
     const rows = users.map(u => {
       const uid = u.uid || u.username || '';
       return [
         uid,
         u.username || '',
         u.profile?.name || '',
+        u.passwordRaw || '(hash only)',
         u.role || 'user',
         isBanned(uid) ? 'Banned' : 'Aktif',
         u.createdAt ? new Date(u.createdAt).toLocaleString('id-ID') : '-',
@@ -2719,7 +3030,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         _renderAdminChat(_chatMsgs);
       }
       if (name === 'members') {
-        _renderMemberDashboard();
+        _fetchUsersNow().then(() => _renderMemberDashboard());
       }
       if (name === 'bans') {
         renderBanList();
@@ -2736,6 +3047,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     const orig = window.doLogout;
     window.doLogout = function () {
       rtUnsubscribeAll();
+      if (_userPollInterval) { clearInterval(_userPollInterval); _userPollInterval = null; }
       if (typeof orig === 'function') orig.call(this);
     };
   }
