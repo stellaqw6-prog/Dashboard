@@ -2750,43 +2750,78 @@ document.addEventListener('DOMContentLoaded',()=>{
       const banned = isBanned(uid);
       const joinDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) : '-';
       const role = u.role || 'user';
-      const banInfo = _bansCache[uid];
+      const isAdmin = role === 'admin';
+      const accent = banned ? '#ff3d5a' : isAdmin ? '#00e5ff' : '#a855f7';
+      const statusBg = banned ? 'rgba(255,61,90,0.12)' : 'rgba(74,222,128,0.1)';
+      const statusColor = banned ? '#ff3d5a' : '#4ade80';
+      const statusText = banned ? '🚫 BAN' : '✅ AKTIF';
 
       return `
-        <div style="background:var(--bg3);border:1px solid ${banned ? 'rgba(255,61,90,0.2)' : 'var(--border)'};border-radius:12px;padding:13px;margin-bottom:8px;border-left:3px solid ${banned ? 'var(--red)' : 'var(--cyan)'}">
-          <div style="display:flex;align-items:center;gap:10px">
-            <!-- Avatar -->
-            <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,${banned?'#7f1d1d,#450a0a':'#0c4a6e,#1e3a5f'});
-              border:1px solid ${banned?'rgba(255,61,90,0.3)':'rgba(0,229,255,0.3)'};
-              display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:${banned?'var(--red)':'var(--cyan)'};flex-shrink:0">
+        <div style="background:linear-gradient(135deg,#1a1025 0%,#161020 100%);border:1px solid ${accent}22;border-left:3px solid ${accent};border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 2px 12px rgba(0,0,0,0.3)">
+
+          <!-- Header: Avatar + Info + Badge -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div style="width:42px;height:42px;border-radius:11px;background:${accent}18;border:2px solid ${accent}44;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:${accent};font-family:'Syne',sans-serif;flex-shrink:0">
               ${avatar}
             </div>
-            <!-- Info -->
             <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff">${_esc(name)}</div>
-                ${role === 'admin' ? '<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:rgba(0,229,255,0.15);border:1px solid var(--cyan);color:var(--cyan);font-family:Space Mono,monospace">ADMIN</span>' : ''}
-                <span style="font-size:8px;padding:1px 6px;border-radius:3px;background:${banned?'var(--red-dim)':'var(--green-dim)'};border:1px solid ${banned?'var(--red)':'var(--green)'};color:${banned?'var(--red)':'var(--green)'};font-family:Space Mono,monospace">${banned?'🚫 BANNED':'✅ AKTIF'}</span>
-              </div>
-              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px">@${_esc(uid)}</div>
-              <div style="font-size:10px;color:var(--muted2);margin-top:2px">📅 Bergabung ${joinDate}</div>
-              ${u.passwordRaw ? `<div style="font-size:10px;color:rgba(255,149,0,0.5);margin-top:2px">🔑 <span id="list-pw-${_esc(uid)}" style="letter-spacing:1px">••••••</span> <button onclick="window._toggleListPw('${_esc(uid)}','${_esc(u.passwordRaw)}')" style="background:none;border:none;color:rgba(255,149,0,0.7);cursor:pointer;font-size:10px;padding:0 3px">👁️</button></div>` : ''}
-              ${banned && banInfo ? `<div style="font-size:10px;color:var(--red);margin-top:2px">🚫 ${_esc(banInfo.reason || 'Tidak ada alasan')}</div>` : ''}
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(name)}</div>
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:#666;margin-top:1px">@${_esc(u.username || uid)}</div>
             </div>
-            <!-- Action Dots -->
-            <button onclick="window._showMemberDetail('${_esc(uid)}')"
-              style="width:32px;height:32px;border-radius:8px;background:var(--bg4);border:1px solid var(--border2);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all 0.2s"
-              onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'"
-              onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted2)'">ℹ️</button>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+              <span style="font-size:9px;padding:3px 8px;border-radius:20px;font-family:'Space Mono',monospace;font-weight:700;background:${statusBg};border:1px solid ${statusColor}44;color:${statusColor};white-space:nowrap">${statusText}</span>
+              ${isAdmin ? `<span style="font-size:9px;padding:2px 7px;border-radius:20px;font-family:'Space Mono',monospace;background:rgba(0,229,255,0.1);border:1px solid #00e5ff44;color:#00e5ff">👑 ADMIN</span>` : ''}
+            </div>
           </div>
-          <!-- Quick Actions -->
-          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+
+          <!-- Info Row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+            <div style="background:#ffffff08;border-radius:8px;padding:7px 10px">
+              <div style="font-size:9px;color:#555;margin-bottom:2px;font-family:'Space Mono',monospace">BERGABUNG</div>
+              <div style="font-size:11px;color:#ccc">${joinDate}</div>
+            </div>
+            <div style="background:#ffffff08;border-radius:8px;padding:7px 10px">
+              <div style="font-size:9px;color:#555;margin-bottom:2px;font-family:'Space Mono',monospace">PASSWORD</div>
+              <div style="display:flex;align-items:center;gap:4px">
+                <span id="list-pw-${_esc(uid)}" style="font-family:'Space Mono',monospace;font-size:11px;color:#f97316;letter-spacing:1px">${u.passwordRaw ? '••••••' : '—'}</span>
+                ${u.passwordRaw ? `<button onclick="window._toggleListPw('${_esc(uid)}','${_esc(u.passwordRaw)}')" style="background:none;border:none;color:#f97316;cursor:pointer;font-size:10px;padding:0;line-height:1">👁</button>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:center">
+            <button onclick="window._showMemberDetail('${_esc(uid)}')"
+              style="padding:8px 0;border-radius:8px;border:1px solid #ffffff18;background:#ffffff08;color:#aaa;font-size:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;transition:all 0.2s;text-align:center"
+              onmouseover="this.style.borderColor='#00e5ff';this.style.color='#00e5ff'"
+              onmouseout="this.style.borderColor='#ffffff18';this.style.color='#aaa'">
+              📋 Detail
+            </button>
             ${!banned
-              ? `<button class="btn-danger" style="font-size:10px;padding:5px 10px" onclick="window._adminQuickBan('${_esc(uid)}','${_esc(u.username || uid)}')">🚫 Ban</button>`
-              : `<button class="btn-green" style="font-size:10px;padding:5px 10px" onclick="window._adminUnban('${_esc(uid)}')">✅ Unban</button>`
+              ? `<button onclick="window._adminQuickBan('${_esc(uid)}','${_esc(u.username || uid)}')"
+                  style="padding:8px 0;border-radius:8px;border:1px solid #ff3d5a33;background:#ff3d5a10;color:#ff3d5a;font-size:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;transition:all 0.2s;text-align:center"
+                  onmouseover="this.style.background='#ff3d5a22'"
+                  onmouseout="this.style.background='#ff3d5a10'">
+                  🚫 Ban
+                </button>`
+              : `<button onclick="window._adminUnban('${_esc(uid)}')"
+                  style="padding:8px 0;border-radius:8px;border:1px solid #4ade8033;background:#4ade8010;color:#4ade80;font-size:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;text-align:center">
+                  ✅ Unban
+                </button>`
             }
-            <button class="btn-secondary" style="font-size:10px;padding:5px 10px" onclick="window._showMemberDetail('${_esc(uid)}')">📋 Detail</button>
-            <button class="btn-secondary" style="font-size:10px;padding:5px 10px" onclick="window._changeUserRole('${_esc(uid)}','${role === 'admin'?'user':'admin'}')">👑 ${role === 'admin'?'Cabut Admin':'Jadikan Admin'}</button>
+            <button onclick="window._changeUserRole('${_esc(uid)}','${isAdmin ? 'user' : 'admin'}')"
+              style="padding:8px 0;border-radius:8px;border:1px solid #00e5ff22;background:#00e5ff08;color:#00e5ff;font-size:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;transition:all 0.2s;text-align:center"
+              onmouseover="this.style.background='#00e5ff18'"
+              onmouseout="this.style.background='#00e5ff08'">
+              ${isAdmin ? '👤 User' : '👑 Admin'}
+            </button>
+            <button onclick="window._deleteUser('${_esc(uid)}','${_esc(u.username || uid)}')"
+              title="Hapus akun permanen"
+              style="width:34px;height:34px;border-radius:8px;border:1px solid #ff3d5a33;background:#ff3d5a08;color:#ff3d5a;font-size:13px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;flex-shrink:0"
+              onmouseover="this.style.background='#ff3d5a22';this.style.borderColor='#ff3d5a'"
+              onmouseout="this.style.background='#ff3d5a08';this.style.borderColor='#ff3d5a33'">
+              🗑️
+            </button>
           </div>
         </div>`;
     }).join('');
@@ -2971,6 +3006,35 @@ document.addEventListener('DOMContentLoaded',()=>{
       _toast('Password member berhasil direset!', 'success');
     } else {
       if (msgEl) { msgEl.textContent = '❌ Gagal menyimpan, cek Firebase Rules!'; msgEl.style.color = 'var(--red)'; msgEl.style.display = 'block'; }
+    }
+  };
+
+  // Hapus akun member permanen
+  window._deleteUser = async (uid, username) => {
+    const confirmed = confirm(`⚠️ HAPUS AKUN PERMANEN\n\nAkun @${username} akan dihapus selamanya.\nSemua data akun ini akan hilang.\n\nLanjutkan?`);
+    if (!confirmed) return;
+    const confirmed2 = confirm(`Konfirmasi sekali lagi:\nHapus @${username} secara permanen?`);
+    if (!confirmed2) return;
+
+    const base = window.FIREBASE_URL || 'https://new-store-5b481-default-rtdb.asia-southeast1.firebasedatabase.app';
+    const tok = window.FIREBASE_TOKEN || '';
+    try {
+      const r = await fetch(`${base}/store/users/${uid}.json${tok ? '?auth='+tok : ''}`, {
+        method: 'DELETE'
+      });
+      if (r.ok) {
+        delete _usersCache[uid];
+        _toast(`🗑️ Akun @${username} berhasil dihapus`, 'success');
+        renderUserList();
+        _renderMemberDashboard();
+        const countEl = document.getElementById('qs-users');
+        if (countEl) countEl.textContent = Object.keys(_usersCache).length;
+      } else {
+        const err = await r.text();
+        _toast('❌ Gagal hapus: ' + err.slice(0, 60), 'error');
+      }
+    } catch(e) {
+      _toast('❌ Error: ' + e.message, 'error');
     }
   };
 
