@@ -409,8 +409,12 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
       <div class="section-head"><div class="section-title">⚙️ Fitur Store</div><div class="section-badge">Pengaturan</div></div>
       <div class="section-body">
         <div class="toggle-row">
-          <div><div class="toggle-label">Mode Maintenance</div><div class="toggle-desc">Sembunyikan store dari publik</div></div>
-          <div class="toggle" id="tg-maintenance" onclick="toggleFitur('maintenance')"></div>
+          <div>
+            <div class="toggle-label">Mode Maintenance</div>
+            <div class="toggle-desc">Sembunyikan store dari publik</div>
+            <div id="maint-status-indicator" style="font-size:10px;color:#4ade80;margin-top:4px;font-family:'Space Mono',monospace">🟢 NONAKTIF</div>
+          </div>
+          <div class="toggle" id="tg-maintenance" onclick="toggleFitur('maintenance');updateMaintIndicator()"></div>
         </div>
         <div class="toggle-row">
           <div><div class="toggle-label">Tampilkan Badge BARU</div><div class="toggle-desc">Badge di pojok produk</div></div>
@@ -1040,6 +1044,7 @@ async function loadAll(){
   cfg.marquee=marquee||['Bot WA — Rp2.000','SC Alya Ai — Rp75.000'];
   cfg.tampilan=tampilan||{accent:'#7c3aed',accent2:'#d946ef',avatar:'U'};
   cfg.fitur=fitur||{maintenance:false,'badge-baru':true,rating:true};
+  setTimeout(updateMaintIndicator, 100);
   cfg.drawer=drawer||[{label:'🏠 Home',url:'#top'},{label:'🤖 Perpanjang Sewa Bot',url:'#renew-bot'},{label:'🔄 Perpanjang Panel',url:'#renew'},{label:'🔍 Track Order',url:'#track'},{label:'⭐ Ulasan',url:'#ulasan'}];
   cfg.payment=payment||{dana:{active:true,no:'628132988940',name:''},gopay:{active:true,no:'628132988940',name:''},ovo:{active:true,no:'628132988940',name:''},qris:{active:true,url:'',name:''},bank:{active:false,bankName:'',no:'',name:''},'wa-confirm':true,'show-all':true,afterMsg:''};
   prodImgData=imgProduk||{};
@@ -1129,7 +1134,30 @@ async function saveDrawer(){showToast('Menyimpan menu...','loading');const ok=aw
    FITUR
    ==================================================== */
 function toggleFitur(key){cfg.fitur[key]=!cfg.fitur[key];const el=document.getElementById(`tg-${key}`);if(el)el.className='toggle'+(cfg.fitur[key]?' on':'');}
-async function saveFitur(){showToast('Menyimpan...','loading');const ok=await dbSet('store-fitur',cfg.fitur);ok?showToast('Pengaturan tersimpan!','success'):showToast('Gagal!','error');}
+function updateMaintIndicator(){
+  const el = document.getElementById('maint-status-indicator');
+  if(!el) return;
+  const isOn = cfg.fitur && cfg.fitur.maintenance;
+  el.textContent = isOn ? '🔴 AKTIF - Store disembunyikan' : '🟢 NONAKTIF - Store normal';
+  el.style.color = isOn ? '#ff3d5a' : '#4ade80';
+}
+
+async function saveFitur(){
+  showToast('Menyimpan...','loading');
+  const ok=await dbSet('store-fitur',cfg.fitur);
+  if(ok){
+    showToast('Pengaturan tersimpan!','success');
+    // Update visual indicator maintenance
+    const maintEl = document.getElementById('tg-maintenance');
+    const maintIndicator = document.getElementById('maint-status-indicator');
+    if(maintIndicator){
+      maintIndicator.textContent = cfg.fitur.maintenance ? '🔴 AKTIF - Store tersembunyi dari publik' : '🟢 NONAKTIF - Store berjalan normal';
+      maintIndicator.style.color = cfg.fitur.maintenance ? '#ff3d5a' : '#4ade80';
+    }
+  } else {
+    showToast('Gagal menyimpan!','error');
+  }
+}
 
 /* ====================================================
    PRODUK
