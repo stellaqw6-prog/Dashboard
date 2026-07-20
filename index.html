@@ -58,8 +58,6 @@ button:active{transform:scale(.97)}
 .tab-btn.active{background:linear-gradient(135deg,var(--purple),var(--accent));color:#fff;border-color:transparent}
 
 main{max-width:920px;margin:0 auto;padding:18px}
-.panel{display:none;flex-direction:column;gap:16px}
-.panel.active{display:flex}
 .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
 .panel-head h2{font-size:16px}
 .panel-head p{font-size:12px;color:var(--muted);margin-top:2px}
@@ -163,6 +161,82 @@ input:checked+.slider-tg::before{transform:translateX(18px)}
 .login-err.show{display:block}
 .login-lock{display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--gold);border-radius:9px;padding:8px 10px;font-size:12px;margin-top:10px}
 .login-lock.show{display:block}
+
+/* ============ POLISH: SCROLLBAR, FOCUS ============ */
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(124,58,237,.35);border-radius:20px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:rgba(168,85,247,.55)}
+*{scrollbar-width:thin;scrollbar-color:rgba(124,58,237,.4) transparent}
+:focus-visible{outline:2px solid var(--purple-light);outline-offset:2px;border-radius:6px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(168,85,247,.22)}
+
+/* ============ BUTTON RIPPLE + PRESS FEEL ============ */
+button{position:relative;overflow:hidden;transition:transform .12s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,opacity .15s,filter .15s}
+button:hover:not(:disabled){filter:brightness(1.08)}
+button:active:not(:disabled){transform:scale(.96)}
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);transform:scale(0);animation:rippleAnim .55s ease-out forwards;pointer-events:none}
+@keyframes rippleAnim{to{transform:scale(2.6);opacity:0}}
+.btn-primary{position:relative}
+.btn-primary::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.18),transparent 60%);opacity:0;transition:opacity .2s}
+.btn-primary:hover:not(:disabled)::after{opacity:1}
+.btn-success-flash{animation:btnFlash .5s ease}
+@keyframes btnFlash{0%{background:linear-gradient(135deg,var(--purple),var(--accent))}40%{background:linear-gradient(135deg,var(--green),#4ade80);transform:scale(1.03)}100%{background:linear-gradient(135deg,var(--purple),var(--accent))}}
+
+/* ============ TOPBAR SIGNATURE: sinyal / pulse ============ */
+.topbar{position:sticky;top:0;z-index:50;overflow:hidden}
+.topbar::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--purple-light),var(--accent),transparent);
+  background-size:200% 100%;animation:scanSweep 4.5s linear infinite;opacity:.6}
+@keyframes scanSweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.conn-dot{position:relative}
+.conn-dot::before{content:'';position:absolute;inset:-5px;border-radius:50%;border:1.5px solid var(--green);animation:dotPing 2s ease-out infinite}
+.conn-dot.bad::before{border-color:var(--red);animation:none;opacity:0}
+@keyframes dotPing{0%{transform:scale(.5);opacity:.9}100%{transform:scale(1.8);opacity:0}}
+
+/* ============ TABS: transisi halus ============ */
+.tab-btn{transition:background .25s ease,color .25s ease,transform .15s cubic-bezier(.34,1.56,.64,1),border-color .25s}
+.tab-btn.active{animation:tabPop .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes tabPop{0%{transform:scale(.9)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+.tab-btn:hover:not(.active){background:var(--bg3);color:var(--text);transform:translateY(-1px)}
+
+/* ============ PANEL SWITCH TRANSITION ============ */
+.panel{display:none;flex-direction:column;gap:16px}
+.panel.active{display:flex;animation:panelIn .38s cubic-bezier(.22,1,.36,1)}
+@keyframes panelIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============ CARD HOVER POLISH ============ */
+.card{transition:border-color .25s,box-shadow .25s,transform .25s}
+.card:hover{border-color:rgba(124,58,237,.35);box-shadow:0 10px 34px rgba(124,58,237,.12)}
+
+/* ============ PRODUK CARD: stagger + hapus animasi ============ */
+.prod-card{animation:cardIn .4s cubic-bezier(.22,1,.36,1) backwards;transition:border-color .2s,transform .2s,box-shadow .2s}
+.prod-card:hover{border-color:rgba(124,58,237,.4);box-shadow:0 8px 28px rgba(124,58,237,.14)}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.prod-card.removing{animation:cardOut .28s ease forwards}
+@keyframes cardOut{to{opacity:0;transform:scale(.92) translateX(12px);max-height:0;margin:0;padding-top:0;padding-bottom:0;overflow:hidden}}
+
+/* ============ TOGGLE: bounce ============ */
+.slider-tg{transition:background .25s}
+.slider-tg::before{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+
+/* ============ TOAST: ikon animasi ============ */
+#toast{display:flex;align-items:center;gap:9px;transform:translateX(-50%) translateY(24px) scale(.92)}
+#toast.show{transform:translateX(-50%) translateY(0) scale(1);transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s}
+.toast-icon{width:16px;height:16px;flex-shrink:0}
+.toast-icon svg{width:100%;height:100%}
+.toast-icon .tick{stroke-dasharray:20;stroke-dashoffset:20;animation:tickDraw .4s .1s ease forwards}
+@keyframes tickDraw{to{stroke-dashoffset:0}}
+.toast-icon .xmark{opacity:0;animation:xFade .25s .05s ease forwards}
+@keyframes xFade{to{opacity:1}}
+
+/* ============ EMPTY STATE ============ */
+.empty-float{animation:emptyFloat 3s ease-in-out infinite}
+@keyframes emptyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
 </style>
 </head>
 <body>
@@ -240,7 +314,7 @@ input:checked+.slider-tg::before{transform:translateX(18px)}
   <main>
 
     <!-- INFO -->
-    <section class="panel" id="panel-info">
+    <section class="panel active" id="panel-info">
       <div class="panel-head"><div><h2>Info Toko</h2><p>Nama toko yang tampil di header & tab browser</p></div></div>
       <div class="card">
         <div class="field"><label>Nama Toko</label><input id="i-nama" placeholder="UnoTech Store"></div>
@@ -444,11 +518,43 @@ function showErrBox(key, status, body){
 }
 function toast(msg, type='success'){
   const t = document.getElementById('toast');
-  t.textContent = (type==='success'?'✅ ':'❌ ') + msg;
+  const icon = type==='success'
+    ? `<span class="toast-icon"><svg viewBox="0 0 24 24" fill="none"><path class="tick" d="M4 12l5 5L20 6" stroke="#4ade80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+    : `<span class="toast-icon"><svg viewBox="0 0 24 24" fill="none" class="xmark"><path d="M5 5l14 14M19 5L5 19" stroke="#ff6b81" stroke-width="3" stroke-linecap="round"/></svg></span>`;
+  t.innerHTML = icon + `<span>${msg}</span>`;
   t.className = 'show ' + type;
   clearTimeout(t._tm);
   t._tm = setTimeout(()=>t.classList.remove('show'), 2600);
 }
+function flashButtonSuccess(btn){
+  if(!btn) return;
+  btn.classList.remove('btn-success-flash');
+  void btn.offsetWidth; // restart animation
+  btn.classList.add('btn-success-flash');
+  setTimeout(()=>btn.classList.remove('btn-success-flash'), 550);
+}
+
+/* Ripple di semua tombol + auto-flash sukses di tombol "Simpan" yang barusan diklik */
+let _lastPrimaryBtn = null, _lastPrimaryBtnTime = 0;
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn || btn.disabled) return;
+
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+  ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+  btn.appendChild(ripple);
+  setTimeout(()=>ripple.remove(), 600);
+
+  if(btn.classList.contains('btn-primary')){
+    _lastPrimaryBtn = btn;
+    _lastPrimaryBtnTime = Date.now();
+  }
+});
 function setConnDot(ok){
   document.getElementById('conn-dot').classList.toggle('bad', !ok);
 }
@@ -590,6 +696,20 @@ async function boot(){
   cfg.info = info || {};
   cfg.kontak = kontak || {};
   cfg.produk = Array.isArray(produk) ? produk : (produk && typeof produk === 'object' ? Object.values(produk) : []);
+  // Jaga-jaga: produk lama/rusak yang tidak punya varians/features tetap dibuat aman
+  // supaya store tidak crash saat merender modal produk.
+  cfg.produk = cfg.produk.map(p => ({
+    id: p.id || ('prod-' + Math.random().toString(36).slice(2)),
+    cat: p.cat || 'bot-wa',
+    title: p.title || '(tanpa nama)',
+    imgTitle: p.imgTitle || '',
+    imgUrl: p.imgUrl || '',
+    price: p.price || 'Rp0',
+    available: p.available || 'Tersedia',
+    desc: p.desc || '',
+    varians: Array.isArray(p.varians) && p.varians.length ? p.varians : [{ name: 'Default', price: p.price || 'Rp0' }],
+    features: Array.isArray(p.features) ? p.features : [],
+  }));
   cfg.imgProduk = imgProduk || {};
   cfg.payment = payment || {};
   cfg.marquee = Array.isArray(marquee) ? marquee : [];
