@@ -342,6 +342,36 @@ button:active:not(:disabled){transform:scale(.96)}
       <button class="btn-primary" onclick="saveProduk()">💾 Simpan Semua Produk</button>
     </section>
 
+    <!-- FORMAT ORDER -->
+    <section class="panel" id="panel-format">
+      <div class="panel-head">
+        <div><h2>Format Order</h2><p>Atur field &amp; format pesan checkout — 1 kategori, 1 format sendiri</p></div>
+      </div>
+      <div class="card">
+        <label style="margin-bottom:10px">Pilih Kategori</label>
+        <div class="row3" id="format-cat-tabs"></div>
+      </div>
+      <div class="card">
+        <div class="sub-label" style="margin-top:0">Field yang Diminta ke Pembeli</div>
+        <div id="format-fields-list"></div>
+        <button class="btn-secondary" onclick="addFormatField()" style="margin-top:8px">+ Tambah Field</button>
+      </div>
+      <div class="card">
+        <label>Template Pesan WhatsApp</label>
+        <p class="hint" style="margin-bottom:8px">
+          Placeholder tersedia: <code>{produk}</code> <code>{durasi}</code> <code>{harga}</code>
+          <code>{grup_buyer}</code> <code>{store_name}</code> + <code>{key}</code> tiap field di atas
+          (key field bisa dilihat/diubah di kotak "Key" pada tiap field).
+        </p>
+        <textarea id="format-template" rows="10" style="font-family:'JetBrains Mono',monospace;font-size:12px"></textarea>
+      </div>
+      <div class="card">
+        <div class="sub-label" style="margin-top:0">Pratinjau Pesan (contoh data)</div>
+        <pre id="format-preview" style="white-space:pre-wrap;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;margin:0"></pre>
+      </div>
+      <button class="btn-primary" onclick="saveOrderFormat()">💾 Simpan Format Order</button>
+    </section>
+
     <!-- TAMPILAN -->
     <section class="panel" id="panel-tampilan">
       <div class="panel-head"><div><h2>Tampilan</h2><p>Background & gambar produk</p></div></div>
@@ -656,6 +686,7 @@ const TABS = [
   {id:'info', label:'🏪 Info'},
   {id:'kontak', label:'📞 Kontak'},
   {id:'produk', label:'📦 Produk'},
+  {id:'format', label:'🧾 Format Order'},
   {id:'tampilan', label:'🎨 Tampilan'},
   {id:'payment', label:'💳 Payment'},
   {id:'konten', label:'📋 Menu & Marquee'},
@@ -674,11 +705,51 @@ function switchTab(id, btn){
 }
 
 /* =====================================================
+   FORMAT ORDER — default per kategori (sinkron dengan store)
+   ===================================================== */
+const ORDER_FORMAT_CATS = [
+  {id:'bot-wa', label:'🤖 Sewa Bot'},
+  {id:'panel', label:'🖥️ Panel'},
+  {id:'source-code', label:'📦 Source Code'},
+];
+const DEFAULT_ORDER_FORMAT = {
+  'bot-wa': {
+    fields: [
+      {key:'link_grup', label:'Link Grup WhatsApp Kamu', type:'url', placeholder:'https://chat.whatsapp.com/...', required:true},
+      {key:'nama', label:'Nama Kamu', type:'text', placeholder:'Nama lengkap kamu', required:true},
+      {key:'wa', label:'Nomor WA Kamu', type:'tel', placeholder:'628xxxxxxxxxx', required:true},
+    ],
+    template: `🤖 *ORDER SEWA BOT ALYA AI*\n━━━━━━━━━━━━━━━━━━\n📦 Produk  : {produk}\n⏱️ Durasi  : {durasi}\n💰 Harga   : {harga}\n\n📋 *DATA PEMBELIAN:*\nLink grup WA  : {link_grup}\nNama pembeli  : {nama}\nNomer pembeli : {wa}\n\n🔗 Link grup buyer :\n{grup_buyer}\n━━━━━━━━━━━━━━━━━━\n🛒 _Order via {store_name}_`,
+  },
+  'panel': {
+    fields: [
+      {key:'nama_panel', label:'Nama Panel', type:'text', placeholder:'Contoh: BotKu Panel', required:true},
+      {key:'wa', label:'Nomor WA Pembeli', type:'tel', placeholder:'628xxxxxxxxxx', required:true},
+    ],
+    template: `🖥️ *ORDER PANEL BOT WA*\n━━━━━━━━━━━━━━━━━━\n📦 Produk  : {produk}\n⏱️ Durasi  : {durasi}\n💰 Harga   : {harga}\n\n📋 *DATA PANEL:*\nNama panel       : {nama_panel}\nNomor WA pembeli : {wa}\n━━━━━━━━━━━━━━━━━━\n🛒 _Order via {store_name}_`,
+  },
+  'source-code': {
+    fields: [
+      {key:'owner', label:'global.owner (Nomor WA)', type:'tel', placeholder:'628xxxxxxxxxx', required:true},
+      {key:'namaowner', label:'global.namaOwner', type:'text', placeholder:'Nama kamu', required:true},
+      {key:'packname', label:'global.packname', type:'text', placeholder:'Nama pack stiker', required:false},
+      {key:'author', label:'global.author', type:'text', placeholder:'Nama author stiker', required:false},
+      {key:'botname', label:'global.botname', type:'text', placeholder:'Nama bot utama', required:true},
+      {key:'botname2', label:'global.botname2', type:'text', placeholder:'Nama bot alternatif', required:false},
+      {key:'nomerbot', label:'Nomor Bot (WA)', type:'tel', placeholder:'628xxxxxxxxxx', required:true},
+    ],
+    template: `📦 *ORDER SC ALYA AI*\n━━━━━━━━━━━━━━━━━━\n📦 Produk : {produk}\n💰 Harga  : {harga}\n\n📋 *KONFIGURASI SCRIPT:*\nglobal.owner = '{owner}'\nglobal.namaOwner = "{namaowner}"\nglobal.packname = '{packname}'\nglobal.author = '{author}'\nglobal.botname = '{botname}'\nglobal.botname2 = "{botname2}"\n\nNomer bot : {nomerbot}\n━━━━━━━━━━━━━━━━━━\n🛒 _Order via {store_name}_`,
+  },
+};
+let currentFormatCat = 'bot-wa';
+
+/* =====================================================
    STATE
    ===================================================== */
 let cfg = {
   info: {}, kontak: {}, produk: [], imgProduk: {}, heroSlides: [],
   payment: {}, marquee: [], drawer: [], tampilan: {}, aiCs: {}, scConfig: {}, fitur: {},
+  orderFormat: JSON.parse(JSON.stringify(DEFAULT_ORDER_FORMAT)),
 };
 
 /* =====================================================
@@ -687,10 +758,10 @@ let cfg = {
 async function boot(){
   renderTabs();
 
-  const [info, kontak, produk, imgProduk, payment, marquee, drawer, tampilan, aiCs, scConfig, fitur] = await Promise.all([
+  const [info, kontak, produk, imgProduk, payment, marquee, drawer, tampilan, aiCs, scConfig, fitur, orderFmt] = await Promise.all([
     dbGet('store-info'), dbGet('store-kontak'), dbGet('store-produk'), dbGet('store-img-produk'),
     dbGet('store-payment'), dbGet('store-marquee'), dbGet('store-drawer'), dbGet('store-tampilan'),
-    dbGet('store-ai-cs'), dbGet('store-sc-config'), dbGet('store-fitur'),
+    dbGet('store-ai-cs'), dbGet('store-sc-config'), dbGet('store-fitur'), dbGet('store-order-format'),
   ]);
 
   cfg.info = info || {};
@@ -718,6 +789,7 @@ async function boot(){
   cfg.aiCs = aiCs || {};
   cfg.scConfig = scConfig || {};
   cfg.fitur = fitur || {};
+  cfg.orderFormat = {...JSON.parse(JSON.stringify(DEFAULT_ORDER_FORMAT)), ...(orderFmt && typeof orderFmt === 'object' ? orderFmt : {})};
 
   document.getElementById('i-nama').value = cfg.info.nama || '';
   document.getElementById('k-wa').value = cfg.kontak.adminWa || '';
@@ -739,6 +811,8 @@ async function boot(){
   renderDrawerList();
   renderResetButtons();
   renderStorageStatus();
+  renderFormatCatTabs();
+  loadFormatCat(currentFormatCat);
 }
 
 /* =====================================================
@@ -1010,6 +1084,98 @@ async function saveScConfig(){
   cfg.scConfig.version = document.getElementById('sc-version').value.trim();
   const ok = await dbSet('store-sc-config', cfg.scConfig);
   toast(ok ? 'Config SC tersimpan!' : 'Gagal simpan config SC', ok?'success':'error');
+}
+
+/* =====================================================
+   FORMAT ORDER — 1 kategori, 1 format sendiri
+   ===================================================== */
+function renderFormatCatTabs(){
+  document.getElementById('format-cat-tabs').innerHTML = ORDER_FORMAT_CATS.map(c=>`
+    <button class="${c.id===currentFormatCat ? 'btn-primary' : 'btn-secondary'}" onclick="switchFormatCat('${c.id}')">${c.label}</button>
+  `).join('');
+}
+function switchFormatCat(catId){
+  persistCurrentFormatEdits();
+  currentFormatCat = catId;
+  renderFormatCatTabs();
+  loadFormatCat(catId);
+}
+function loadFormatCat(catId){
+  const fmt = cfg.orderFormat[catId] || { fields: [], template: '' };
+  document.getElementById('format-template').value = fmt.template || '';
+  renderFormatFields();
+  renderFormatPreview();
+}
+/* Simpan draft field/template yang sedang diedit ke cfg.orderFormat, TANPA kirim ke Firebase.
+   Dipanggil setiap pindah kategori atau sebelum Save, supaya editan tidak hilang. */
+function persistCurrentFormatEdits(){
+  if(!cfg.orderFormat[currentFormatCat]) cfg.orderFormat[currentFormatCat] = { fields: [], template: '' };
+  cfg.orderFormat[currentFormatCat].template = document.getElementById('format-template').value;
+}
+function renderFormatFields(){
+  const fmt = cfg.orderFormat[currentFormatCat] || { fields: [] };
+  const el = document.getElementById('format-fields-list');
+  if(!fmt.fields.length){ el.innerHTML = `<p class="hint">Belum ada field. Klik "+ Tambah Field" untuk mulai.</p>`; return; }
+  el.innerHTML = fmt.fields.map((f,i)=>`
+    <div class="sub-list" style="margin-bottom:8px">
+      <div class="row2">
+        <div class="field" style="margin-bottom:8px"><label>Label (ditampilkan ke pembeli)</label>
+          <input value="${esc(f.label)}" oninput="updateFormatField(${i},'label',this.value)"></div>
+        <div class="field" style="margin-bottom:8px"><label>Key (untuk placeholder {key})</label>
+          <input value="${esc(f.key)}" placeholder="contoh: nama_lengkap" oninput="updateFormatField(${i},'key',this.value.replace(/[^a-z0-9_]/gi,'').toLowerCase())"></div>
+      </div>
+      <div class="row3" style="align-items:end">
+        <div class="field" style="margin-bottom:0"><label>Tipe Input</label>
+          <select onchange="updateFormatField(${i},'type',this.value)">
+            <option value="text" ${f.type==='text'?'selected':''}>Teks</option>
+            <option value="tel" ${f.type==='tel'?'selected':''}>Nomor WA</option>
+            <option value="url" ${f.type==='url'?'selected':''}>Link/URL</option>
+            <option value="textarea" ${f.type==='textarea'?'selected':''}>Teks Panjang</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:0"><label>Placeholder</label>
+          <input value="${esc(f.placeholder)}" oninput="updateFormatField(${i},'placeholder',this.value)"></div>
+        <button class="btn-danger" onclick="removeFormatField(${i})">🗑 Hapus</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;text-transform:none;font-size:12px;color:var(--text)">
+        <input type="checkbox" style="width:auto" ${f.required?'checked':''} onchange="updateFormatField(${i},'required',this.checked)">
+        Wajib diisi
+      </label>
+    </div>
+  `).join('');
+}
+function updateFormatField(i, key, value){
+  cfg.orderFormat[currentFormatCat].fields[i][key] = value;
+  if(key!=='label' && key!=='placeholder') renderFormatFields();
+  renderFormatPreview();
+}
+function addFormatField(){
+  if(!cfg.orderFormat[currentFormatCat]) cfg.orderFormat[currentFormatCat] = { fields: [], template: '' };
+  cfg.orderFormat[currentFormatCat].fields.push({ key:'field_'+Date.now().toString(36).slice(-4), label:'Field Baru', type:'text', placeholder:'', required:false });
+  renderFormatFields();
+}
+function removeFormatField(i){
+  cfg.orderFormat[currentFormatCat].fields.splice(i,1);
+  renderFormatFields();
+  renderFormatPreview();
+}
+function renderFormatPreview(){
+  const fmt = cfg.orderFormat[currentFormatCat] || { fields:[], template:'' };
+  const template = document.getElementById('format-template').value;
+  const sample = {
+    produk: 'Contoh Produk', durasi: '1 Bulan', harga: 'Rp10.000',
+    grup_buyer: cfg.kontak.grupBuyer || 'https://chat.whatsapp.com/contoh',
+    store_name: cfg.info.nama || 'UnoTech Store',
+  };
+  fmt.fields.forEach(f=>{ sample[f.key] = f.placeholder || `(${f.label})`; });
+  const rendered = template.replace(/\{(\w+)\}/g, (m,k)=> (k in sample) ? sample[k] : m);
+  document.getElementById('format-preview').textContent = rendered;
+}
+document.getElementById('format-template')?.addEventListener('input', renderFormatPreview);
+async function saveOrderFormat(){
+  persistCurrentFormatEdits();
+  const ok = await dbSet('store-order-format', cfg.orderFormat);
+  toast(ok ? 'Format order tersimpan!' : 'Gagal simpan format order', ok?'success':'error');
 }
 
 /* =====================================================
